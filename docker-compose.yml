@@ -1,0 +1,26 @@
+services:
+  ski-bindings:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Required: set a long random string as your access token
+      - APP_TOKEN=${APP_TOKEN}
+      # Optional: Ollama Vision fallback (local, no API key) — set URL to enable
+      # e.g. http://your-ollama-host:11434  or  http://host.docker.internal:11434
+      - OLLAMA_URL=${OLLAMA_URL:-}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-llava}
+      # Optional: Claude Vision API fallback (requires API key)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-opus-4-6}
+      # Set to "false" to disable Claude API calls entirely
+      - USE_CLAUDE_FALLBACK=${USE_CLAUDE_FALLBACK:-true}
+    volumes:
+      # Mount templates directory so you can update binding_db.json without rebuilding
+      - ./templates:/app/templates:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

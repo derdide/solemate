@@ -1,0 +1,2639 @@
+{
+  "version": "1.0",
+  "description": "Ski binding hole templates. All coordinates in mm relative to mounting point. X+ toward tip, Y+ lateral right.",
+  "bindings": [
+    {
+      "id": "marker-jester-griffon-squire",
+      "name": "Marker Jester / Griffon / Squire",
+      "aliases": [
+        "Marker Jester",
+        "Marker Griffon",
+        "Marker Squire"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Marker-Jester-Griffon-Squire.pdf",
+      "verified": true,
+      "notes": "",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 18.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -18.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 54.0,
+            "y": 18.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 54.0,
+            "y": -18.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -80.0,
+            "y": 16.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -80.0,
+            "y": -16.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -105.0,
+            "y": 16.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -105.0,
+            "y": -16.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 12.5
+      },
+      "variants": []
+    },
+    {
+      "id": "marker-kingpin",
+      "name": "Marker Kingpin",
+      "aliases": [
+        "Kingpin 10",
+        "Kingpin 13"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Marker_Kingpin.pdf",
+      "verified": true,
+      "notes": "Tech binding. Toe line may not be exactly 15mm from pin line.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 46.0,
+            "y": 19.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 46.0,
+            "y": -19.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 7.5,
+            "y": 19.0,
+            "label": "pin_upper_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 7.5,
+            "y": -19.0,
+            "label": "pin_upper_left",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": 19.0,
+            "label": "pin_lower_right",
+            "row": "lower_pin"
+          },
+          {
+            "x": 0.0,
+            "y": -19.0,
+            "label": "pin_lower_left",
+            "row": "lower_pin"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -77.0,
+            "y": 17.5,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -77.0,
+            "y": -17.5,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -112.0,
+            "y": 17.5,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -112.0,
+            "y": -17.5,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 12.5
+      },
+      "variants": []
+    },
+    {
+      "id": "salomon-alpine",
+      "name": "Salomon Alpine Bindings",
+      "aliases": [
+        "Salomon STH",
+        "Scott alpine (pre-2013)",
+        "Atomic alpine (pre-2013)"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Salomon-alpine.pdf",
+      "verified": true,
+      "notes": "Covers Salomon alpine until 2013, Scott and Atomic rebadges.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 21.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -21.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 40.0,
+            "y": 21.0,
+            "label": "front_mid_right"
+          },
+          {
+            "x": 40.0,
+            "y": -21.0,
+            "label": "front_mid_left"
+          },
+          {
+            "x": 75.0,
+            "y": 21.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 75.0,
+            "y": -21.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -92.0,
+            "y": 14.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -92.0,
+            "y": -14.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -133.0,
+            "y": 14.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -133.0,
+            "y": -14.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 11.0
+      },
+      "variants": []
+    },
+    {
+      "id": "salomon-sth2",
+      "name": "Salomon STH2 / Warden MNC",
+      "aliases": [
+        "Salomon STH2",
+        "Salomon Warden MNC"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Salomon-STH2.pdf",
+      "verified": true,
+      "notes": "NOT the Warden 11.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 20.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -20.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 32.0,
+            "y": 20.0,
+            "label": "front_mid_right"
+          },
+          {
+            "x": 32.0,
+            "y": -20.0,
+            "label": "front_mid_left"
+          },
+          {
+            "x": 65.0,
+            "y": 20.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 65.0,
+            "y": -20.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -75.0,
+            "y": 14.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -75.0,
+            "y": -14.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -103.0,
+            "y": 14.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -103.0,
+            "y": -14.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 15.0
+      },
+      "variants": []
+    },
+    {
+      "id": "salomon-warden11",
+      "name": "Salomon Warden 11",
+      "aliases": [
+        "Warden 11"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Salomon-Warden11.pdf",
+      "verified": false,
+      "notes": "NOT YET VERIFIED - USE WITH CAUTION.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 20.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -20.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 65.0,
+            "y": 20.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 65.0,
+            "y": -20.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -75.0,
+            "y": 14.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -75.0,
+            "y": -14.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -103.0,
+            "y": 14.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -103.0,
+            "y": -14.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 20.0
+      },
+      "variants": []
+    },
+    {
+      "id": "salomon-guardian",
+      "name": "Salomon Guardian / Atomic Tracker",
+      "aliases": [
+        "Salomon Guardian",
+        "Atomic Tracker"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Salomon-Guradian.pdf",
+      "verified": true,
+      "notes": "Size S BSL 265-320, L 300-360.",
+      "bsl_range_mm": [
+        265,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 20.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -20.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 42.0,
+            "y": 20.0,
+            "label": "front_mid_right"
+          },
+          {
+            "x": 42.0,
+            "y": -20.0,
+            "label": "front_mid_left"
+          },
+          {
+            "x": 53.0,
+            "y": 20.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 53.0,
+            "y": -20.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -56.0,
+            "y": 20.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -56.0,
+            "y": -20.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -96.0,
+            "y": 20.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -96.0,
+            "y": -20.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "salomon-rental",
+      "name": "Salomon Rental (SC)",
+      "aliases": [
+        "Salomon SC"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Salomon_Rental.pdf",
+      "verified": true,
+      "notes": "Fixed rental binding, BSL 310-340. No BSL adjustment.",
+      "bsl_range_mm": [
+        310,
+        340
+      ],
+      "mounting_reference": "fixed",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 15.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -15.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 45.0,
+            "y": 15.0,
+            "label": "front_mid_right"
+          },
+          {
+            "x": 45.0,
+            "y": -15.0,
+            "label": "front_mid_left"
+          },
+          {
+            "x": 75.0,
+            "y": 15.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 75.0,
+            "y": -15.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -83.0,
+            "y": 14.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -83.0,
+            "y": -14.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -130.0,
+            "y": 14.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -130.0,
+            "y": -14.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "tyrolia-head-alpine",
+      "name": "Tyrolia / Head Alpine",
+      "aliases": [
+        "Head alpine",
+        "Tyrolia alpine"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Tyrolia_Head_alpine.pdf",
+      "verified": true,
+      "notes": "",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 20.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -20.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 55.0,
+            "y": 20.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 55.0,
+            "y": -20.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -95.0,
+            "y": 21.25,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -95.0,
+            "y": -21.25,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -112.0,
+            "y": 21.25,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -112.0,
+            "y": -21.25,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 15.0
+      },
+      "variants": []
+    },
+    {
+      "id": "tyrolia-head-demo",
+      "name": "Tyrolia / Head AAAttack13 Demo/Rental",
+      "aliases": [
+        "Head AAAttack Demo",
+        "Tyrolia Demo"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Tyrolia_Head_AAAttack_Demo.pdf",
+      "verified": false,
+      "notes": "Fixed position rental binding. No BSL adjustment.",
+      "bsl_range_mm": null,
+      "mounting_reference": "fixed",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 17.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -17.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 100.0,
+            "y": 17.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 100.0,
+            "y": -17.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -90.0,
+            "y": 10.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -90.0,
+            "y": -10.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -110.0,
+            "y": 10.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -110.0,
+            "y": -10.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "tyrolia-head-ambition",
+      "name": "Tyrolia / Head AAAmbition",
+      "aliases": [
+        "Head Ambition",
+        "Tyrolia Ambition"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Tyrolia_Head_AAAmbition.pdf",
+      "verified": true,
+      "notes": "Inline system.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 21.25,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -21.25,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 64.0,
+            "y": 21.25,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 64.0,
+            "y": -21.25,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -45.0,
+            "y": 17.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -45.0,
+            "y": -17.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -87.5,
+            "y": 17.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -87.5,
+            "y": -17.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "tyrolia-head-ambition-carbon",
+      "name": "Tyrolia / Head AAAmbition Carbon",
+      "aliases": [
+        "Head Ambition Carbon",
+        "Tyrolia Ambition Carbon"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Tyrolia_Head_AAAmbition_Carbon.pdf",
+      "verified": true,
+      "notes": "Size S/M/L variants.",
+      "bsl_range_mm": [
+        265,
+        340
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 21.25,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -21.25,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 64.0,
+            "y": 21.25,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 64.0,
+            "y": -21.25,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -45.0,
+            "y": 14.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -45.0,
+            "y": -14.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -73.0,
+            "y": 14.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -73.0,
+            "y": -14.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "marker-duke-baron-tour",
+      "name": "Marker Duke / Baron / Tour F10/F12",
+      "aliases": [
+        "Marker Duke",
+        "Marker Baron",
+        "Marker Tour F10",
+        "Marker Tour F12"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Marker-Duke-Baron-Tour.pdf",
+      "verified": true,
+      "notes": "Reference is boot tip not mounting point. S=265-320, L=300-360.",
+      "bsl_range_mm": [
+        265,
+        360
+      ],
+      "mounting_reference": "boot_tip",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": []
+      },
+      "heel_unit": {
+        "holes": [],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": [
+        {
+          "variant_id": "size-S",
+          "name": "Size S",
+          "bsl_range_mm": [
+            265,
+            320
+          ],
+          "front_unit": {
+            "holes": [
+              {
+                "x_from_tip": -69.0,
+                "y": 18.0,
+                "label": "front_rear_right"
+              },
+              {
+                "x_from_tip": -69.0,
+                "y": -18.0,
+                "label": "front_rear_left"
+              },
+              {
+                "x_from_tip": -121.0,
+                "y": 18.0,
+                "label": "front_fore_right"
+              },
+              {
+                "x_from_tip": -121.0,
+                "y": -18.0,
+                "label": "front_fore_left"
+              }
+            ]
+          },
+          "heel_unit": {
+            "holes": [
+              {
+                "x_from_tip": -287.0,
+                "y": 18.0,
+                "label": "heel_front_right"
+              },
+              {
+                "x_from_tip": -287.0,
+                "y": -18.0,
+                "label": "heel_front_left"
+              },
+              {
+                "x_from_tip": -323.0,
+                "y": 18.0,
+                "label": "heel_rear_right"
+              },
+              {
+                "x_from_tip": -323.0,
+                "y": -18.0,
+                "label": "heel_rear_left"
+              }
+            ],
+            "adjustment_range_mm": 0.0
+          }
+        },
+        {
+          "variant_id": "size-L",
+          "name": "Size L",
+          "bsl_range_mm": [
+            300,
+            360
+          ],
+          "front_unit": {
+            "holes": [
+              {
+                "x_from_tip": -69.0,
+                "y": 18.0,
+                "label": "front_rear_right"
+              },
+              {
+                "x_from_tip": -69.0,
+                "y": -18.0,
+                "label": "front_rear_left"
+              },
+              {
+                "x_from_tip": -121.0,
+                "y": 18.0,
+                "label": "front_fore_right"
+              },
+              {
+                "x_from_tip": -121.0,
+                "y": -18.0,
+                "label": "front_fore_left"
+              }
+            ]
+          },
+          "heel_unit": {
+            "holes": [
+              {
+                "x_from_tip": -327.0,
+                "y": 18.0,
+                "label": "heel_front_right"
+              },
+              {
+                "x_from_tip": -327.0,
+                "y": -18.0,
+                "label": "heel_front_left"
+              },
+              {
+                "x_from_tip": -363.0,
+                "y": 18.0,
+                "label": "heel_rear_right"
+              },
+              {
+                "x_from_tip": -363.0,
+                "y": -18.0,
+                "label": "heel_rear_left"
+              }
+            ],
+            "adjustment_range_mm": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "marker-duke-epf",
+      "name": "Marker Duke EPF",
+      "aliases": [
+        "Duke EPF"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Marker-Duke-EPF.pdf",
+      "verified": true,
+      "notes": "Wider hole spacing than Duke/Baron. Boot tip reference.",
+      "bsl_range_mm": [
+        265,
+        360
+      ],
+      "mounting_reference": "boot_tip",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": []
+      },
+      "heel_unit": {
+        "holes": [],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": [
+        {
+          "variant_id": "size-S",
+          "name": "Size S",
+          "bsl_range_mm": [
+            265,
+            320
+          ],
+          "front_unit": {
+            "holes": [
+              {
+                "x_from_tip": -69.0,
+                "y": 23.0,
+                "label": "front_rear_right"
+              },
+              {
+                "x_from_tip": -69.0,
+                "y": -23.0,
+                "label": "front_rear_left"
+              },
+              {
+                "x_from_tip": -121.0,
+                "y": 23.0,
+                "label": "front_fore_right"
+              },
+              {
+                "x_from_tip": -121.0,
+                "y": -23.0,
+                "label": "front_fore_left"
+              }
+            ]
+          },
+          "heel_unit": {
+            "holes": [
+              {
+                "x_from_tip": -287.0,
+                "y": 23.0,
+                "label": "heel_front_right"
+              },
+              {
+                "x_from_tip": -287.0,
+                "y": -23.0,
+                "label": "heel_front_left"
+              },
+              {
+                "x_from_tip": -323.0,
+                "y": 23.0,
+                "label": "heel_rear_right"
+              },
+              {
+                "x_from_tip": -323.0,
+                "y": -23.0,
+                "label": "heel_rear_left"
+              }
+            ],
+            "adjustment_range_mm": 0.0
+          }
+        },
+        {
+          "variant_id": "size-L",
+          "name": "Size L",
+          "bsl_range_mm": [
+            300,
+            360
+          ],
+          "front_unit": {
+            "holes": [
+              {
+                "x_from_tip": -69.0,
+                "y": 23.0,
+                "label": "front_rear_right"
+              },
+              {
+                "x_from_tip": -69.0,
+                "y": -23.0,
+                "label": "front_rear_left"
+              },
+              {
+                "x_from_tip": -121.0,
+                "y": 23.0,
+                "label": "front_fore_right"
+              },
+              {
+                "x_from_tip": -121.0,
+                "y": -23.0,
+                "label": "front_fore_left"
+              }
+            ]
+          },
+          "heel_unit": {
+            "holes": [
+              {
+                "x_from_tip": -327.0,
+                "y": 23.0,
+                "label": "heel_front_right"
+              },
+              {
+                "x_from_tip": -327.0,
+                "y": -23.0,
+                "label": "heel_front_left"
+              },
+              {
+                "x_from_tip": -363.0,
+                "y": 23.0,
+                "label": "heel_rear_right"
+              },
+              {
+                "x_from_tip": -363.0,
+                "y": -23.0,
+                "label": "heel_rear_left"
+              }
+            ],
+            "adjustment_range_mm": 0.0
+          }
+        }
+      ]
+    },
+    {
+      "id": "marker-mseries",
+      "name": "Marker M-Series",
+      "aliases": [
+        "Marker M3",
+        "Marker M10",
+        "Marker M12"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Marker-MSeries.pdf",
+      "verified": true,
+      "notes": "",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 18.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -18.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 56.0,
+            "y": 18.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 56.0,
+            "y": -18.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -65.0,
+            "y": 10.5,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -65.0,
+            "y": -10.5,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -86.0,
+            "y": 10.5,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -86.0,
+            "y": -10.5,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 10.0
+      },
+      "variants": []
+    },
+    {
+      "id": "marker-ten",
+      "name": "Marker Ten Free",
+      "aliases": [
+        "Marker Ten"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Marker-Ten.pdf",
+      "verified": true,
+      "notes": "",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 18.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -18.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 56.0,
+            "y": 18.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 56.0,
+            "y": -18.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -65.0,
+            "y": 10.5,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -65.0,
+            "y": -10.5,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -86.0,
+            "y": 10.5,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -86.0,
+            "y": -10.5,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 10.0
+      },
+      "variants": []
+    },
+    {
+      "id": "rossignol-axial1-look-pivot",
+      "name": "Rossignol Axial1 / Look Pivot (pre-2005)",
+      "aliases": [
+        "Rossignol Axial1",
+        "Look Pivot",
+        "Look Pivot pre-2005"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Rossi-Axial1_Look-Pivot.pdf",
+      "verified": true,
+      "notes": "",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 21.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -21.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 41.5,
+            "y": 21.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 41.5,
+            "y": -21.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -46.0,
+            "y": 21.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -46.0,
+            "y": -21.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -70.0,
+            "y": 21.0,
+            "label": "heel_mid_right"
+          },
+          {
+            "x": -70.0,
+            "y": -21.0,
+            "label": "heel_mid_left"
+          },
+          {
+            "x": -94.0,
+            "y": 21.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -94.0,
+            "y": -21.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 16.0
+      },
+      "variants": []
+    },
+    {
+      "id": "rossignol-axial2-look-px",
+      "name": "Rossignol Axial2 / Look PX",
+      "aliases": [
+        "Rossignol Axial2",
+        "Look PX"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Rossi-Axial2_Look-PX.pdf",
+      "verified": true,
+      "notes": "",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 21.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -21.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 41.5,
+            "y": 21.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 41.5,
+            "y": -21.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -26.0,
+            "y": 21.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -26.0,
+            "y": -21.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -131.0,
+            "y": 21.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -131.0,
+            "y": -21.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "rossignol-fks-look-pivot-2010",
+      "name": "Rossignol FKS / Look Pivot (post-2010)",
+      "aliases": [
+        "Rossignol FKS",
+        "Look Pivot post-2010"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Rossi-FKS.pdf",
+      "verified": true,
+      "notes": "Post-2010 Look Pivot.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 21.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -21.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 22.5,
+            "y": 21.0,
+            "label": "front_mid_right"
+          },
+          {
+            "x": 22.5,
+            "y": -21.0,
+            "label": "front_mid_left"
+          },
+          {
+            "x": 41.5,
+            "y": 21.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 41.5,
+            "y": -21.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -21.0,
+            "y": 21.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -21.0,
+            "y": -21.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -51.0,
+            "y": 21.0,
+            "label": "heel_mid_right"
+          },
+          {
+            "x": -51.0,
+            "y": -21.0,
+            "label": "heel_mid_left"
+          },
+          {
+            "x": -76.0,
+            "y": 21.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -76.0,
+            "y": -21.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 5.0
+      },
+      "variants": []
+    },
+    {
+      "id": "rossignol-look-racing",
+      "name": "Rossignol Axial Racing / Look PX Racing",
+      "aliases": [
+        "Look PX Racing",
+        "Rossignol Axial Racing"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Rossi_Look-Racing.pdf",
+      "verified": true,
+      "notes": "",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 21.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -21.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 41.5,
+            "y": 21.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 41.5,
+            "y": -21.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -26.0,
+            "y": 21.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -26.0,
+            "y": -21.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -107.0,
+            "y": 21.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -107.0,
+            "y": -21.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "naxo-nx-alpine",
+      "name": "Naxo NX01/NX21 (Alpine)",
+      "aliases": [
+        "Naxo NX",
+        "Naxo NX alpine"
+      ],
+      "category": "alpine",
+      "source_pdf": "alpine/Bohrschablone_Naxo-NX.pdf",
+      "verified": true,
+      "notes": "S/M/L size variants.",
+      "bsl_range_mm": [
+        240,
+        380
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 19.5,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -19.5,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 76.0,
+            "y": 19.5,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 76.0,
+            "y": -19.5,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -46.0,
+            "y": 12.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -46.0,
+            "y": -12.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -70.0,
+            "y": 12.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -70.0,
+            "y": -12.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "dynafit-radical",
+      "name": "Dynafit Radical (TLT) V1",
+      "aliases": [
+        "Dynafit Radical",
+        "TLT Radical"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Dynafit-Radical.pdf",
+      "verified": true,
+      "notes": "Tech binding V1.0.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 36.0,
+            "y": 21.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 36.0,
+            "y": -21.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 10.0,
+            "y": 21.0,
+            "label": "pin_upper_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 10.0,
+            "y": -21.0,
+            "label": "pin_upper_left",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": 21.0,
+            "label": "pin_lower_right",
+            "row": "lower_pin"
+          },
+          {
+            "x": 0.0,
+            "y": -21.0,
+            "label": "pin_lower_left",
+            "row": "lower_pin"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -58.0,
+            "y": 18.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -58.0,
+            "y": -18.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -94.0,
+            "y": 18.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -94.0,
+            "y": -18.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "dynafit-radical2",
+      "name": "Dynafit Radical 2",
+      "aliases": [
+        "Dynafit Radical 2",
+        "TLT Radical 2"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Dynafit_Radical2.pdf",
+      "verified": true,
+      "notes": "Updated Radical.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 58.0,
+            "y": 21.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 58.0,
+            "y": -21.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 36.0,
+            "y": 21.0,
+            "label": "mid_right",
+            "row": "mid_line"
+          },
+          {
+            "x": 36.0,
+            "y": -21.0,
+            "label": "mid_left",
+            "row": "mid_line"
+          },
+          {
+            "x": 10.0,
+            "y": 21.0,
+            "label": "pin_upper_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 10.0,
+            "y": -21.0,
+            "label": "pin_upper_left",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": 21.0,
+            "label": "pin_lower_right",
+            "row": "lower_pin"
+          },
+          {
+            "x": 0.0,
+            "y": -21.0,
+            "label": "pin_lower_left",
+            "row": "lower_pin"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -58.0,
+            "y": 18.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -58.0,
+            "y": -18.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -145.5,
+            "y": 18.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -145.5,
+            "y": -18.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "dynafit-superlight",
+      "name": "Dynafit TLT Superlite",
+      "aliases": [
+        "Dynafit Superlite",
+        "TLT Superlite"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Dynafit-Superlight.pdf",
+      "verified": true,
+      "notes": "Lightweight tech.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 28.0,
+            "y": 15.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 28.0,
+            "y": -15.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 13.25,
+            "y": 15.0,
+            "label": "pin_upper_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 13.25,
+            "y": -15.0,
+            "label": "pin_upper_left",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": 15.0,
+            "label": "pin_lower_right",
+            "row": "lower_pin"
+          },
+          {
+            "x": 0.0,
+            "y": -15.0,
+            "label": "pin_lower_left",
+            "row": "lower_pin"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -28.0,
+            "y": 19.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -28.0,
+            "y": -19.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -56.0,
+            "y": 19.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -56.0,
+            "y": -19.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "dynafit-vertical-speed-g3-onyx",
+      "name": "Dynafit TLT Vertical/Speed / G3 Onyx",
+      "aliases": [
+        "Dynafit Vertical",
+        "Dynafit Speed",
+        "G3 Onyx"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Dynafit-Vertical-Speed_G3-Onyx.pdf",
+      "verified": true,
+      "notes": "G3 Onyx variants included.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 26.5,
+            "y": 15.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 26.5,
+            "y": -15.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 13.25,
+            "y": 15.0,
+            "label": "pin_upper_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 13.25,
+            "y": -15.0,
+            "label": "pin_upper_left",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": 15.0,
+            "label": "pin_lower_right",
+            "row": "lower_pin"
+          },
+          {
+            "x": 0.0,
+            "y": -15.0,
+            "label": "pin_lower_left",
+            "row": "lower_pin"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -52.5,
+            "y": 16.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -52.5,
+            "y": -16.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -94.75,
+            "y": 18.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -94.75,
+            "y": -18.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 9.0
+      },
+      "variants": []
+    },
+    {
+      "id": "dynafit-beast14",
+      "name": "Dynafit Beast 14",
+      "aliases": [
+        "Beast 14"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Dynafit_Beast14.pdf",
+      "verified": true,
+      "notes": "Tech binding.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 58.0,
+            "y": 21.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 58.0,
+            "y": -21.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 26.0,
+            "y": 21.0,
+            "label": "pin_upper_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 26.0,
+            "y": -21.0,
+            "label": "pin_upper_left",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": 21.0,
+            "label": "pin_lower_right",
+            "row": "lower_pin"
+          },
+          {
+            "x": 0.0,
+            "y": -21.0,
+            "label": "pin_lower_left",
+            "row": "lower_pin"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -36.0,
+            "y": 18.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -36.0,
+            "y": -18.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -108.0,
+            "y": 18.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -108.0,
+            "y": -18.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "dynafit-beast16",
+      "name": "Dynafit Beast 16",
+      "aliases": [
+        "Beast 16"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Dynafit_Beast16.pdf",
+      "verified": true,
+      "notes": "Three-row front unit.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 70.5,
+            "y": 10.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 70.5,
+            "y": -10.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 40.5,
+            "y": 15.0,
+            "label": "pin_upper_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 40.5,
+            "y": -15.0,
+            "label": "pin_upper_left",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": 15.0,
+            "label": "pin_lower_right",
+            "row": "lower_pin"
+          },
+          {
+            "x": 0.0,
+            "y": -15.0,
+            "label": "pin_lower_left",
+            "row": "lower_pin"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -36.0,
+            "y": 21.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -36.0,
+            "y": -21.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -108.0,
+            "y": 18.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -108.0,
+            "y": -18.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "g3-ion-zed",
+      "name": "G3 Ion / Zed",
+      "aliases": [
+        "G3 Ion",
+        "G3 Zed"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_G3-Ion.pdf",
+      "verified": true,
+      "notes": "Two-row front (toe + pin).",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 45.0,
+            "y": 20.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 45.0,
+            "y": -20.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 0.0,
+            "y": 10.0,
+            "label": "pin_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": -10.0,
+            "label": "pin_left",
+            "row": "pin_line"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -52.5,
+            "y": 18.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -52.5,
+            "y": -18.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -88.5,
+            "y": 18.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -88.5,
+            "y": -18.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 15.0
+      },
+      "variants": []
+    },
+    {
+      "id": "fritschi-diamir-freeride",
+      "name": "Fritschi Diamir Freeride / Freeride Plus",
+      "aliases": [
+        "Diamir Freeride",
+        "Diamir Freeride Plus"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Diamir-Freeride.pdf",
+      "verified": true,
+      "notes": "Freeride Plus has additional central hole.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 18.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -18.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 72.0,
+            "y": 18.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 72.0,
+            "y": -18.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -55.0,
+            "y": 12.5,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -55.0,
+            "y": -12.5,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -80.0,
+            "y": 12.5,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -80.0,
+            "y": -12.5,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "fritschi-diamir-freeridepro-eagle",
+      "name": "Fritschi Diamir FreeridePro + Eagle (2010)",
+      "aliases": [
+        "Diamir FreeridePro",
+        "Diamir Eagle"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Diamir-FreeridePro+Eagle.pdf",
+      "verified": true,
+      "notes": "FreeridePro has additional central hole. S/M/L size variants.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 18.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -18.0,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 99.0,
+            "y": 18.0,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 99.0,
+            "y": -18.0,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -55.0,
+            "y": 16.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -55.0,
+            "y": -16.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -80.0,
+            "y": 16.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -80.0,
+            "y": -16.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "fritschi-diamir-vipec",
+      "name": "Fritschi Diamir Vipec",
+      "aliases": [
+        "Diamir Vipec",
+        "Vipec"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Diamir-Vipec.pdf",
+      "verified": true,
+      "notes": "Tech binding with wide toe horn.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 66.0,
+            "y": 22.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 66.0,
+            "y": -22.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 26.0,
+            "y": 20.0,
+            "label": "pin_upper_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 26.0,
+            "y": -20.0,
+            "label": "pin_upper_left",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": 20.0,
+            "label": "pin_lower_right",
+            "row": "lower_pin"
+          },
+          {
+            "x": 0.0,
+            "y": -20.0,
+            "label": "pin_lower_left",
+            "row": "lower_pin"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -60.0,
+            "y": 14.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -60.0,
+            "y": -14.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -88.0,
+            "y": 14.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -88.0,
+            "y": -14.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 14.0
+      },
+      "variants": []
+    },
+    {
+      "id": "naxo-nx-lt",
+      "name": "Naxo NX01/NX21 (Touring)",
+      "aliases": [
+        "Naxo NX LT",
+        "Naxo NX touring"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Naxo-NX.pdf",
+      "verified": true,
+      "notes": "S/M/L variants. Extended BSL range.",
+      "bsl_range_mm": [
+        240,
+        380
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 0.0,
+            "y": 19.5,
+            "label": "front_rear_right"
+          },
+          {
+            "x": 0.0,
+            "y": -19.5,
+            "label": "front_rear_left"
+          },
+          {
+            "x": 76.0,
+            "y": 19.5,
+            "label": "front_fore_right"
+          },
+          {
+            "x": 76.0,
+            "y": -19.5,
+            "label": "front_fore_left"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -46.0,
+            "y": 12.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -46.0,
+            "y": -12.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -70.0,
+            "y": 12.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -70.0,
+            "y": -12.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "salomon-mtn",
+      "name": "Salomon MTN",
+      "aliases": [
+        "Salomon MTN"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Salomon-MTN.pdf",
+      "verified": false,
+      "notes": "NOT YET VERIFIED - USE WITH CAUTION. Tech binding.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 38.0,
+            "y": 15.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 38.0,
+            "y": -15.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 19.5,
+            "y": 15.0,
+            "label": "pin_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 19.5,
+            "y": -15.0,
+            "label": "pin_left",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": 15.0,
+            "label": "base_right",
+            "row": "base"
+          },
+          {
+            "x": 0.0,
+            "y": -15.0,
+            "label": "base_left",
+            "row": "base"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -58.0,
+            "y": 13.5,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -58.0,
+            "y": -13.5,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -103.5,
+            "y": 13.5,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -103.5,
+            "y": -13.5,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 0.0
+      },
+      "variants": []
+    },
+    {
+      "id": "salomon-shift-mnc",
+      "name": "Salomon Shift MNC 13",
+      "aliases": [
+        "Salomon Shift",
+        "Shift MNC"
+      ],
+      "category": "lt",
+      "source_pdf": "lt/Bohrschablone_Salomon-Shift_MNC.pdf",
+      "verified": false,
+      "notes": "NOT YET VERIFIED - USE WITH CAUTION. Hybrid alpine/tech.",
+      "bsl_range_mm": [
+        260,
+        360
+      ],
+      "mounting_reference": "half_bsl",
+      "drill_diameter_mm": 4.1,
+      "front_unit": {
+        "holes": [
+          {
+            "x": 65.0,
+            "y": 20.0,
+            "label": "toe_right",
+            "row": "toe_line"
+          },
+          {
+            "x": 65.0,
+            "y": -20.0,
+            "label": "toe_left",
+            "row": "toe_line"
+          },
+          {
+            "x": 35.0,
+            "y": 20.0,
+            "label": "mid_right",
+            "row": "mid_line"
+          },
+          {
+            "x": 35.0,
+            "y": -20.0,
+            "label": "mid_left",
+            "row": "mid_line"
+          },
+          {
+            "x": 0.0,
+            "y": 20.0,
+            "label": "pin_right",
+            "row": "pin_line"
+          },
+          {
+            "x": 0.0,
+            "y": -20.0,
+            "label": "pin_left",
+            "row": "pin_line"
+          }
+        ]
+      },
+      "heel_unit": {
+        "holes": [
+          {
+            "x": -68.0,
+            "y": 18.0,
+            "label": "heel_front_right"
+          },
+          {
+            "x": -68.0,
+            "y": -18.0,
+            "label": "heel_front_left"
+          },
+          {
+            "x": -136.0,
+            "y": 18.0,
+            "label": "heel_rear_right"
+          },
+          {
+            "x": -136.0,
+            "y": -18.0,
+            "label": "heel_rear_left"
+          }
+        ],
+        "adjustment_range_mm": 15.0
+      },
+      "variants": []
+    }
+  ]
+}
