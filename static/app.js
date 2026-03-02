@@ -348,7 +348,7 @@ function drawAxisArrow(ox, oy, adx, ady) {
   // Label
   calCtx.font = `bold ${12/_calScale}px sans-serif`;
   calCtx.fillStyle = '#ff6600';
-  calCtx.fillText('→HEEL', ex + adx*(hw+2/_calScale), ey + ady*(hw+2/_calScale));
+  calCtx.fillText('→TIP', ex + adx*(hw+2/_calScale), ey + ady*(hw+2/_calScale));
 }
 
 // Toggle ski axis direction — re-check overlay after clicking if wrong
