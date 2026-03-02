@@ -94,9 +94,9 @@ async function runAnalysis() {
   fd.append('bsl_mm', bsl);
   fd.append('category', document.getElementById('cat-select').value);
   fd.append('min_separation_mm', document.getElementById('sep-input').value);
-  fd.append('top_n', 40);
-  fd.append('bsl_test_step', 10);
-  fd.append('bsl_test_range', 30);
+  fd.append('top_n', 999);
+  fd.append('bsl_test_step', 0);
+  fd.append('bsl_test_range', 0);
 
   try {
     const resp = await fetch(`/api/analyze?token=${encodeURIComponent(_token)}`, { method: 'POST', body: fd });
@@ -162,9 +162,9 @@ async function applyCalibrationAndAnalyze() {
   fd.append('bsl_mm', document.getElementById('bsl-input').value);
   fd.append('category', document.getElementById('cat-select').value);
   fd.append('min_separation_mm', document.getElementById('sep-input').value);
-  fd.append('top_n', 40);
-  fd.append('bsl_test_step', 10);
-  fd.append('bsl_test_range', 30);
+  fd.append('top_n', 999);
+  fd.append('bsl_test_step', 0);
+  fd.append('bsl_test_range', 0);
   fd.append('mm_per_pixel', mmPerPixel);
   fd.append('mounting_point_x_px', mpX);
   fd.append('mounting_point_y_px', mpY);
