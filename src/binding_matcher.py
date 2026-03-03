@@ -135,11 +135,17 @@ def compute_absolute_holes(
         })
 
     if ref == "half_bsl":
-        # Standard: template coords are directly relative to mounting_point_x
+        # Independent toe/heel pieces: template x coords are relative to boot
+        # tip (front unit) and boot heel (heel unit), not to the mounting point.
+        #   boot_tip_x  = mounting_point_x + bsl_mm/2  → front x_offset = -bsl_mm/2
+        #   boot_heel_x = mounting_point_x - bsl_mm/2  → heel  x_offset = +bsl_mm/2
+        # With _add(): x_abs = mounting_point_x - (tx + x_offset)
+        #   front: x_abs = (mounting_point_x + bsl_mm/2) - tx = boot_tip_x  - tx  ✓
+        #   heel:  x_abs = (mounting_point_x - bsl_mm/2) - tx = boot_heel_x - tx  ✓
         for h in binding["front_unit"]["holes"]:
-            _add(h, "front")
+            _add(h, "front", x_offset=-bsl_mm / 2.0)
         for h in binding["heel_unit"]["holes"]:
-            _add(h, "heel")
+            _add(h, "heel", x_offset=bsl_mm / 2.0)
 
     elif ref == "boot_tip":
         # Duke/Baron: holes given relative to boot tip

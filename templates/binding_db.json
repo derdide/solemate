@@ -289,22 +289,22 @@
         "holes": [
           {
             "x": -75.0,
-            "y": 14.0,
+            "y": 16.0,
             "label": "heel_front_right"
           },
           {
             "x": -75.0,
-            "y": -14.0,
+            "y": -16.0,
             "label": "heel_front_left"
           },
           {
             "x": -103.0,
-            "y": 14.0,
+            "y": 16.0,
             "label": "heel_rear_right"
           },
           {
             "x": -103.0,
-            "y": -14.0,
+            "y": -16.0,
             "label": "heel_rear_left"
           }
         ],
@@ -356,22 +356,22 @@
         "holes": [
           {
             "x": -75.0,
-            "y": 14.0,
+            "y": 15.0,
             "label": "heel_front_right"
           },
           {
             "x": -75.0,
-            "y": -14.0,
+            "y": -15.0,
             "label": "heel_front_left"
           },
           {
             "x": -103.0,
-            "y": 14.0,
+            "y": 15.0,
             "label": "heel_rear_right"
           },
           {
             "x": -103.0,
-            "y": -14.0,
+            "y": -15.0,
             "label": "heel_rear_left"
           }
         ],
@@ -400,32 +400,32 @@
         "holes": [
           {
             "x": 0.0,
-            "y": 20.0,
+            "y": 21.0,
             "label": "front_rear_right"
           },
           {
             "x": 0.0,
-            "y": -20.0,
+            "y": -21.0,
             "label": "front_rear_left"
           },
           {
             "x": 42.0,
-            "y": 20.0,
+            "y": 21.0,
             "label": "front_mid_right"
           },
           {
             "x": 42.0,
-            "y": -20.0,
+            "y": -21.0,
             "label": "front_mid_left"
           },
           {
             "x": 53.0,
-            "y": 20.0,
+            "y": 21.0,
             "label": "front_fore_right"
           },
           {
             "x": 53.0,
-            "y": -20.0,
+            "y": -21.0,
             "label": "front_fore_left"
           }
         ]
@@ -434,22 +434,22 @@
         "holes": [
           {
             "x": -56.0,
-            "y": 20.0,
+            "y": 21.0,
             "label": "heel_front_right"
           },
           {
             "x": -56.0,
-            "y": -20.0,
+            "y": -21.0,
             "label": "heel_front_left"
           },
           {
             "x": -96.0,
-            "y": 20.0,
+            "y": 21.0,
             "label": "heel_rear_right"
           },
           {
             "x": -96.0,
-            "y": -20.0,
+            "y": -21.0,
             "label": "heel_rear_left"
           }
         ],
@@ -520,12 +520,12 @@
             "label": "heel_front_left"
           },
           {
-            "x": -130.0,
+            "x": -132.0,
             "y": 14.0,
             "label": "heel_rear_right"
           },
           {
-            "x": -130.0,
+            "x": -132.0,
             "y": -14.0,
             "label": "heel_rear_left"
           }
@@ -653,12 +653,12 @@
             "label": "heel_front_left"
           },
           {
-            "x": -110.0,
+            "x": -130.0,
             "y": 10.0,
             "label": "heel_rear_right"
           },
           {
-            "x": -110.0,
+            "x": -130.0,
             "y": -10.0,
             "label": "heel_rear_left"
           }
@@ -1132,22 +1132,22 @@
         "holes": [
           {
             "x": -65.0,
-            "y": 10.5,
+            "y": 21.0,
             "label": "heel_front_right"
           },
           {
             "x": -65.0,
-            "y": -10.5,
+            "y": -21.0,
             "label": "heel_front_left"
           },
           {
             "x": -86.0,
-            "y": 10.5,
+            "y": 21.0,
             "label": "heel_rear_right"
           },
           {
             "x": -86.0,
-            "y": -10.5,
+            "y": -21.0,
             "label": "heel_rear_left"
           }
         ],
@@ -1184,12 +1184,12 @@
             "label": "front_rear_left"
           },
           {
-            "x": 56.0,
+            "x": 31.0,
             "y": 18.0,
             "label": "front_fore_right"
           },
           {
-            "x": 56.0,
+            "x": 31.0,
             "y": -18.0,
             "label": "front_fore_left"
           }
@@ -1199,22 +1199,22 @@
         "holes": [
           {
             "x": -65.0,
-            "y": 10.5,
+            "y": 21.0,
             "label": "heel_front_right"
           },
           {
             "x": -65.0,
-            "y": -10.5,
+            "y": -21.0,
             "label": "heel_front_left"
           },
           {
             "x": -86.0,
-            "y": 10.5,
+            "y": 21.0,
             "label": "heel_rear_right"
           },
           {
             "x": -86.0,
-            "y": -10.5,
+            "y": -21.0,
             "label": "heel_rear_left"
           }
         ],
@@ -1424,32 +1424,32 @@
         "holes": [
           {
             "x": -21.0,
-            "y": 21.0,
+            "y": 15.0,
             "label": "heel_front_right"
           },
           {
             "x": -21.0,
-            "y": -21.0,
+            "y": -15.0,
             "label": "heel_front_left"
           },
           {
             "x": -51.0,
-            "y": 21.0,
+            "y": 15.0,
             "label": "heel_mid_right"
           },
           {
             "x": -51.0,
-            "y": -21.0,
+            "y": -15.0,
             "label": "heel_mid_left"
           },
           {
             "x": -76.0,
-            "y": 21.0,
+            "y": 15.0,
             "label": "heel_rear_right"
           },
           {
             "x": -76.0,
-            "y": -21.0,
+            "y": -15.0,
             "label": "heel_rear_left"
           }
         ],
@@ -1579,12 +1579,12 @@
             "label": "heel_front_left"
           },
           {
-            "x": -70.0,
+            "x": -86.0,
             "y": 12.0,
             "label": "heel_rear_right"
           },
           {
-            "x": -70.0,
+            "x": -86.0,
             "y": -12.0,
             "label": "heel_rear_left"
           }
@@ -1613,38 +1613,38 @@
       "front_unit": {
         "holes": [
           {
-            "x": 36.0,
-            "y": 21.0,
+            "x": 28.25,
+            "y": 15.0,
             "label": "toe_right",
             "row": "toe_line"
           },
           {
-            "x": 36.0,
-            "y": -21.0,
+            "x": 28.25,
+            "y": -15.0,
             "label": "toe_left",
             "row": "toe_line"
           },
           {
-            "x": 10.0,
-            "y": 21.0,
+            "x": 13.25,
+            "y": 15.0,
             "label": "pin_upper_right",
             "row": "pin_line"
           },
           {
-            "x": 10.0,
-            "y": -21.0,
+            "x": 13.25,
+            "y": -15.0,
             "label": "pin_upper_left",
             "row": "pin_line"
           },
           {
             "x": 0.0,
-            "y": 21.0,
+            "y": 15.0,
             "label": "pin_lower_right",
             "row": "lower_pin"
           },
           {
             "x": 0.0,
-            "y": -21.0,
+            "y": -15.0,
             "label": "pin_lower_left",
             "row": "lower_pin"
           }
@@ -1653,22 +1653,22 @@
       "heel_unit": {
         "holes": [
           {
-            "x": -58.0,
+            "x": -52.5,
             "y": 18.0,
             "label": "heel_front_right"
           },
           {
-            "x": -58.0,
+            "x": -52.5,
             "y": -18.0,
             "label": "heel_front_left"
           },
           {
-            "x": -94.0,
+            "x": -94.75,
             "y": 18.0,
             "label": "heel_rear_right"
           },
           {
-            "x": -94.0,
+            "x": -94.75,
             "y": -18.0,
             "label": "heel_rear_left"
           }
@@ -1698,49 +1698,49 @@
         "holes": [
           {
             "x": 58.0,
-            "y": 21.0,
+            "y": 18.0,
             "label": "toe_right",
             "row": "toe_line"
           },
           {
             "x": 58.0,
-            "y": -21.0,
+            "y": -18.0,
             "label": "toe_left",
             "row": "toe_line"
           },
           {
             "x": 36.0,
-            "y": 21.0,
+            "y": 18.0,
             "label": "mid_right",
             "row": "mid_line"
           },
           {
             "x": 36.0,
-            "y": -21.0,
+            "y": -18.0,
             "label": "mid_left",
             "row": "mid_line"
           },
           {
             "x": 10.0,
-            "y": 21.0,
+            "y": 18.0,
             "label": "pin_upper_right",
             "row": "pin_line"
           },
           {
             "x": 10.0,
-            "y": -21.0,
+            "y": -18.0,
             "label": "pin_upper_left",
             "row": "pin_line"
           },
           {
             "x": 0.0,
-            "y": 21.0,
+            "y": 18.0,
             "label": "pin_lower_right",
             "row": "lower_pin"
           },
           {
             "x": 0.0,
-            "y": -21.0,
+            "y": -18.0,
             "label": "pin_lower_left",
             "row": "lower_pin"
           }
@@ -2234,12 +2234,12 @@
             "label": "heel_front_left"
           },
           {
-            "x": -80.0,
+            "x": -95.0,
             "y": 12.5,
             "label": "heel_rear_right"
           },
           {
-            "x": -80.0,
+            "x": -95.0,
             "y": -12.5,
             "label": "heel_rear_left"
           }
@@ -2454,12 +2454,12 @@
             "label": "heel_front_left"
           },
           {
-            "x": -70.0,
+            "x": -86.0,
             "y": 12.0,
             "label": "heel_rear_right"
           },
           {
-            "x": -70.0,
+            "x": -86.0,
             "y": -12.0,
             "label": "heel_rear_left"
           }
@@ -2488,37 +2488,37 @@
         "holes": [
           {
             "x": 38.0,
-            "y": 15.0,
+            "y": 20.0,
             "label": "toe_right",
             "row": "toe_line"
           },
           {
             "x": 38.0,
-            "y": -15.0,
+            "y": -20.0,
             "label": "toe_left",
             "row": "toe_line"
           },
           {
             "x": 19.5,
-            "y": 15.0,
+            "y": 20.0,
             "label": "pin_right",
             "row": "pin_line"
           },
           {
             "x": 19.5,
-            "y": -15.0,
+            "y": -20.0,
             "label": "pin_left",
             "row": "pin_line"
           },
           {
             "x": 0.0,
-            "y": 15.0,
+            "y": 20.0,
             "label": "base_right",
             "row": "base"
           },
           {
             "x": 0.0,
-            "y": -15.0,
+            "y": -20.0,
             "label": "base_left",
             "row": "base"
           }
