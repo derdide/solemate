@@ -341,16 +341,17 @@
     },
     {
       "id": "salomon-rental",
-      "name": "Salomon Rental (SC)",
+      "name": "Salomon Rental",
       "aliases": [
-        "Salomon SC"
+        "Salomon SC",
+		"Salomon Demo"
       ],
       "category": "alpine",
       "source_pdf": "alpine/Bohrschablone_Salomon_Rental.pdf",
       "verified": true,
       "notes": "Fixed rental binding, BSL 310-340. No BSL adjustment. [verified 2026-04-12]",
       "bsl_range_mm": [
-        310,
+        260,
         340
       ],
       "mounting_reference": "fixed",
