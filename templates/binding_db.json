@@ -72,90 +72,6 @@
       "variants": []
     },
     {
-      "id": "marker-kingpin",
-      "name": "Marker Kingpin",
-      "aliases": [
-        "Kingpin 10",
-        "Kingpin 13"
-      ],
-      "category": "lt",
-      "source_pdf": "lt/Bohrschablone_Marker_Kingpin.pdf",
-      "verified": true,
-      "notes": "Tech binding. Toe line may not be exactly 15mm from pin line. [verified 2026-04-09]",
-      "bsl_range_mm": [
-        260,
-        360
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 46.0,
-            "y": 19.0,
-            "label": "toe_right",
-            "row": "toe_line"
-          },
-          {
-            "x": 46.0,
-            "y": -19.0,
-            "label": "toe_left",
-            "row": "toe_line"
-          },
-          {
-            "x": 7.5,
-            "y": 19.0,
-            "label": "pin_upper_right",
-            "row": "pin_line"
-          },
-          {
-            "x": 7.5,
-            "y": -19.0,
-            "label": "pin_upper_left",
-            "row": "pin_line"
-          },
-          {
-            "x": 0.0,
-            "y": 19.0,
-            "label": "pin_lower_right",
-            "row": "lower_pin"
-          },
-          {
-            "x": 0.0,
-            "y": -19.0,
-            "label": "pin_lower_left",
-            "row": "lower_pin"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -77.0,
-            "y": 17.5,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -77.0,
-            "y": -17.5,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -112.0,
-            "y": 17.5,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -112.0,
-            "y": -17.5,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 12.5
-      },
-      "variants": []
-    },
-    {
       "id": "salomon-alpine",
       "name": "Salomon Alpine Bindings (4-hole toe)",
       "aliases": [
@@ -290,15 +206,14 @@
     },
     {
       "id": "salomon-sth2",
-      "name": "Salomon STH2 / Warden MNC",
+      "name": "Salomon STH2",
       "aliases": [
-        "Salomon STH2",
-        "Salomon Warden MNC"
+        "Salomon STH2"
       ],
       "category": "alpine",
       "source_pdf": "alpine/Bohrschablone_Salomon-STH2.pdf",
       "verified": true,
-      "notes": "NOT the Warden 11. [Corrected 2025: front 3-row x values and heel x re-extracted from PDF] [verified 2026-04-09]",
+      "notes": "NOT the Warden 11, NOT the Warden 13. [Corrected 2025: front 3-row x values and heel x re-extracted from PDF] [verified 2026-04-09]",
       "bsl_range_mm": [
         260,
         360
@@ -308,24 +223,14 @@
       "front_unit": {
         "holes": [
           {
-            "x": -50.0,
-            "y": 20.0,
-            "label": "front_fore_right"
-          },
-          {
-            "x": -50.0,
-            "y": -20.0,
-            "label": "front_fore_left"
-          },
-          {
             "x": -15.0,
             "y": 21.0,
-            "label": "front_mid_right"
+            "label": "front_fore_right"
           },
           {
             "x": -15.0,
             "y": -21.0,
-            "label": "front_mid_left"
+            "label": "front_fore_left"
           },
           {
             "x": 15.0,
@@ -367,15 +272,16 @@
       "variants": []
     },
     {
-      "id": "salomon-warden11",
-      "name": "Salomon Warden 11",
+      "id": "salomon-warden13",
+      "name": "Salomon Warden MNC",
       "aliases": [
-        "Warden 11"
+        "Salomon Warden 13",
+        "Salomon Warden MNC"
       ],
       "category": "alpine",
-      "source_pdf": "alpine/Bohrschablone_Salomon-Warden11.pdf",
+      "source_pdf": "alpine/Bohrschablone_Salomon-STH2.pdf",
       "verified": true,
-      "notes": "NOT YET VERIFIED - USE WITH CAUTION. [Corrected 2025: front x and heel x re-extracted from PDF] [verified 2026-04-09]",
+      "notes": "NOT the Warden 11.",
       "bsl_range_mm": [
         260,
         360
@@ -409,27 +315,27 @@
       "heel_unit": {
         "holes": [
           {
-            "x": -16.0,
-            "y": 15.0,
+            "x": -28.0,
+            "y": 16.0,
             "label": "heel_fore_right"
           },
           {
-            "x": -16.0,
-            "y": -15.0,
+            "x": -28.0,
+            "y": -16.0,
             "label": "heel_fore_left"
           },
           {
-            "x": 64.0,
-            "y": 15.0,
+            "x": 47.0,
+            "y": 16.0,
             "label": "heel_rear_right"
           },
           {
-            "x": 64.0,
-            "y": -15.0,
+            "x": 47.0,
+            "y": -16.0,
             "label": "heel_rear_left"
           }
         ],
-        "adjustment_range_mm": 17.5
+        "adjustment_range_mm": 15.0
       },
       "variants": []
     },
@@ -452,57 +358,57 @@
       "front_unit": {
         "holes": [
           {
-            "x": 0.0,
-            "y": 15.0,
-            "label": "front_rear_right"
-          },
-          {
-            "x": 0.0,
-            "y": -15.0,
-            "label": "front_rear_left"
-          },
-          {
-            "x": 45.0,
-            "y": 15.0,
-            "label": "front_mid_right"
-          },
-          {
-            "x": 45.0,
-            "y": -15.0,
-            "label": "front_mid_left"
-          },
-          {
-            "x": 75.0,
+            "x": -193.0,
             "y": 15.0,
             "label": "front_fore_right"
           },
           {
-            "x": 75.0,
+            "x": -193.0,
             "y": -15.0,
             "label": "front_fore_left"
+          },
+          {
+            "x": -118.0,
+            "y": 15.0,
+            "label": "front_rear_right"
+          },
+          {
+            "x": -118.0,
+            "y": -15.0,
+            "label": "front_rear_left"
           }
         ]
       },
       "heel_unit": {
         "holes": [
           {
-            "x": -83.0,
+            "x": 98.0,
             "y": 14.0,
             "label": "heel_front_right"
           },
           {
-            "x": -83.0,
+            "x": 98.0,
             "y": -14.0,
             "label": "heel_front_left"
           },
+		  {
+            "x": 147.0,
+            "y": 10.0,
+            "label": "heel_mid_right"
+          },
           {
-            "x": -132.0,
-            "y": 14.0,
+            "x": 147.0,
+            "y": -10.0,
+            "label": "heel_mid_left"
+          },
+          {
+            "x": 230.0,
+            "y": 21.0,
             "label": "heel_rear_right"
           },
           {
-            "x": -132.0,
-            "y": -14.0,
+            "x": 230.0,
+            "y": -21.0,
             "label": "heel_rear_left"
           }
         ],
@@ -595,22 +501,22 @@
       "front_unit": {
         "holes": [
           {
-            "x": -27.0,
+            "x": -190.0,
             "y": 17.0,
             "label": "front_fore_right"
           },
           {
-            "x": -27.0,
+            "x": -190.0,
             "y": -17.0,
             "label": "front_fore_left"
           },
           {
-            "x": 73.0,
+            "x": 90.0,
             "y": 17.0,
             "label": "front_rear_right"
           },
           {
-            "x": 73.0,
+            "x": 90.0,
             "y": -17.0,
             "label": "front_rear_left"
           }
@@ -619,582 +525,27 @@
       "heel_unit": {
         "holes": [
           {
-            "x": -33.0,
+            "x": 130.0,
             "y": 10.0,
             "label": "heel_fore_right"
           },
           {
-            "x": -33.0,
+            "x": 130.0,
             "y": -10.0,
             "label": "heel_fore_left"
           },
           {
-            "x": 62.0,
+            "x": 225.0,
             "y": 21.25,
             "label": "heel_rear_right"
           },
           {
-            "x": 62.0,
+            "x": 225.0,
             "y": -21.25,
             "label": "heel_rear_left"
           }
         ],
         "adjustment_range_mm": 0.0
-      },
-      "variants": []
-    },
-    {
-      "id": "tyrolia-head-ambition",
-      "name": "Tyrolia / Head AAAmbition",
-      "aliases": [
-        "Head Ambition",
-        "Tyrolia Ambition"
-      ],
-      "category": "lt",
-      "source_pdf": "lt/Bohrschablone_Tyrolia_Head_AAAmbition.pdf",
-      "verified": true,
-      "notes": "Inline system. Corrected heel_rear holes: x -87.5→-90.0mm (fore-aft spacing measured from PDF = 45.0mm, not 42.5mm); y ±17.0→±14.0mm (PDF lateral span = 28.0mm, not 34.0mm). Heel_front and front unit coordinates confirmed correct. [verified 2026-04-13]",
-      "bsl_range_mm": [
-        260,
-        360
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 0.0,
-            "y": 21.25,
-            "label": "front_rear_right"
-          },
-          {
-            "x": 0.0,
-            "y": -21.25,
-            "label": "front_rear_left"
-          },
-          {
-            "x": 64.0,
-            "y": 21.25,
-            "label": "front_fore_right"
-          },
-          {
-            "x": 64.0,
-            "y": -21.25,
-            "label": "front_fore_left"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -45.0,
-            "y": 17.0,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -45.0,
-            "y": -17.0,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -90.0,
-            "y": 14.0,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -90.0,
-            "y": -14.0,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 0.0
-      },
-      "variants": []
-    },
-    {
-      "id": "tyrolia-head-ambition-carbon",
-      "name": "Tyrolia / Head AAAmbition Carbon",
-      "aliases": [
-        "Head Ambition Carbon",
-        "Tyrolia Ambition Carbon"
-      ],
-      "category": "lt",
-      "source_pdf": "lt/Bohrschablone_Tyrolia_Head_AAAmbition_Carbon.pdf",
-      "verified": true,
-      "notes": "Size S/M/L variants. CORRECTIONS: (1) heel_front y corrected from ±14.0mm to ±17.0mm (PDF labels 34mm lateral span for front heel holes, not 28mm). (2) heel_rear x corrected from -73.0mm to -90.0mm: PDF clearly shows 45mm inter-row distance (not 28mm as implied by original -73 vs -45); heel_front x=-45mm retained from original (no direct PDF label found to contradict it). [verified 2026-04-14]",
-      "bsl_range_mm": [
-        265,
-        340
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 0.0,
-            "y": 21.25,
-            "label": "front_rear_right"
-          },
-          {
-            "x": 0.0,
-            "y": -21.25,
-            "label": "front_rear_left"
-          },
-          {
-            "x": 64.0,
-            "y": 21.25,
-            "label": "front_fore_right"
-          },
-          {
-            "x": 64.0,
-            "y": -21.25,
-            "label": "front_fore_left"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -45.0,
-            "y": 17.0,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -45.0,
-            "y": -17.0,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -90.0,
-            "y": 14.0,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -90.0,
-            "y": -14.0,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 0.0
-      },
-      "variants": []
-    },
-    {
-      "id": "marker-duke-baron-tour",
-      "name": "Marker Duke / Baron / Tour F10/F12",
-      "aliases": [
-        "Marker Duke",
-        "Marker Baron",
-        "Marker Tour F10",
-        "Marker Tour F12"
-      ],
-      "category": "alpine",
-      "source_pdf": "alpine/Bohrschablone_Marker-Duke-Baron-Tour.pdf",
-      "verified": true,
-      "notes": "Reference is boot tip not mounting point. S=265-320, L=300-360. PARTIAL VERIFICATION 2026-04-14: Front unit CONFIRMED against PDF annotations. front_rear x_from_tip=-69mm (PDF: 68.9mm, delta -0.1mm) OK. front_fore x_from_tip=-121mm (PDF: 120.3mm, delta -0.7mm) OK. y=+/-18mm confirmed via 36mm lateral span annotations. Heel unit AMBIGUOUS (re-analyzed 2026-04-14): Left-column panel has exactly 2 hole rows (Groups C and E), measured 71.0mm apart (102.1 PDF-pts lateral = 36.0mm, 201.3 PDF-pts longitudinal = 71.0mm, scale confirmed at 0.3528 mm/pt). '218(S)/258(L) mm' annotation is consistent with JSON heel_front positions if measured from front_rear holes: S heel_front=-69-218=-287mm OK, L heel_front=-69-258=-327mm OK. POTENTIAL ERROR in heel_rear: PDF shows 71mm between the two left-column hole rows, but JSON stores 36mm within-size spacing (S: -287 to -323 = 36mm; L: -327 to -363 = 36mm). If 71mm = within-size front-to-rear heel row spacing, corrected values would be: S heel_rear=-358mm (JSON=-323, delta=-35mm); L heel_rear=-398mm (JSON=-363, delta=-35mm). Alternative: 71mm may represent combined S_front-to-L_rear span (JSON: 363-287=76mm, delta=5mm) with template sharing S_rear+L_front at a single row, but this cannot be confirmed without physical inspection. '102 mm' right-column annotation unidentified. Manual verification with physical binding required.",
-      "bsl_range_mm": [
-        265,
-        360
-      ],
-      "mounting_reference": "boot_tip",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": []
-      },
-      "heel_unit": {
-        "holes": [],
-        "adjustment_range_mm": 0.0
-      },
-      "variants": [
-        {
-          "variant_id": "size-S",
-          "name": "Size S",
-          "bsl_range_mm": [
-            265,
-            320
-          ],
-          "front_unit": {
-            "holes": [
-              {
-                "x_from_tip": -69.0,
-                "y": 18.0,
-                "label": "front_rear_right"
-              },
-              {
-                "x_from_tip": -69.0,
-                "y": -18.0,
-                "label": "front_rear_left"
-              },
-              {
-                "x_from_tip": -121.0,
-                "y": 18.0,
-                "label": "front_fore_right"
-              },
-              {
-                "x_from_tip": -121.0,
-                "y": -18.0,
-                "label": "front_fore_left"
-              }
-            ]
-          },
-          "heel_unit": {
-            "holes": [
-              {
-                "x_from_tip": -287.0,
-                "y": 18.0,
-                "label": "heel_front_right"
-              },
-              {
-                "x_from_tip": -287.0,
-                "y": -18.0,
-                "label": "heel_front_left"
-              },
-              {
-                "x_from_tip": -323.0,
-                "y": 18.0,
-                "label": "heel_rear_right"
-              },
-              {
-                "x_from_tip": -323.0,
-                "y": -18.0,
-                "label": "heel_rear_left"
-              }
-            ],
-            "adjustment_range_mm": 0.0
-          }
-        },
-        {
-          "variant_id": "size-L",
-          "name": "Size L",
-          "bsl_range_mm": [
-            300,
-            360
-          ],
-          "front_unit": {
-            "holes": [
-              {
-                "x_from_tip": -69.0,
-                "y": 18.0,
-                "label": "front_rear_right"
-              },
-              {
-                "x_from_tip": -69.0,
-                "y": -18.0,
-                "label": "front_rear_left"
-              },
-              {
-                "x_from_tip": -121.0,
-                "y": 18.0,
-                "label": "front_fore_right"
-              },
-              {
-                "x_from_tip": -121.0,
-                "y": -18.0,
-                "label": "front_fore_left"
-              }
-            ]
-          },
-          "heel_unit": {
-            "holes": [
-              {
-                "x_from_tip": -327.0,
-                "y": 18.0,
-                "label": "heel_front_right"
-              },
-              {
-                "x_from_tip": -327.0,
-                "y": -18.0,
-                "label": "heel_front_left"
-              },
-              {
-                "x_from_tip": -363.0,
-                "y": 18.0,
-                "label": "heel_rear_right"
-              },
-              {
-                "x_from_tip": -363.0,
-                "y": -18.0,
-                "label": "heel_rear_left"
-              }
-            ],
-            "adjustment_range_mm": 0.0
-          }
-        }
-      ]
-    },
-    {
-      "id": "marker-duke-epf",
-      "name": "Marker Duke EPF",
-      "aliases": [
-        "Duke EPF"
-      ],
-      "category": "alpine",
-      "source_pdf": "alpine/Bohrschablone_Marker-Duke-EPF.pdf",
-      "verified": true,
-      "notes": "Wider hole spacing than Duke/Baron. Boot tip reference. [2026-04-15 auto-verify] Front unit confirmed vs PDF: boot_tip→front_rear=69mm (-69.0 ✓), fore-aft gap=52mm giving front_fore at 121mm (-121.0 ✓), lateral 46mm (±23.0 ✓). Heel unit ambiguous: PDF labels 71mm and 102mm in heel section; closest consistent reading is midline→heel_front=71mm, midline→heel_rear=102mm (midline at 218mm/258mm from boot_tip for S/L). This yields heel_front at 289/329mm and heel_rear at 320/360mm — differing from JSON values (287/327 and 323/363) by 2-3mm. However, the midline reference relationship is not explicitly annotated in the PDF and the 71mm dimension visually spans between hole rows, making the interpretation uncertain. Heel unit left unverified; requires human review of heel assembly reference definition. [2026-04-15 second visual inspection] Re-examined duke_front_dims.png and duke_heel_dims.png directly. Front unit fully confirmed: 69mm and 52mm fore-aft dimensions explicit, 46mm lateral (±23mm) explicit — all match JSON. Heel unit: duke_heel_dims.png shows 102mm as a horizontal span annotation and 71mm as a second annotation; 'for S' and 'for L' arrows visible alongside 265–360mm scale. Origin of both dimensions remains unlabeled — cannot determine whether they are measured from boot_tip, from heel body midline, or from boot heel. Ambiguity unresolved. Heel coordinates remain unverified; REQUIRES HUMAN REVIEW to clarify heel assembly reference definition before marking verified.",
-      "bsl_range_mm": [
-        265,
-        360
-      ],
-      "mounting_reference": "boot_tip",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": []
-      },
-      "heel_unit": {
-        "holes": [],
-        "adjustment_range_mm": 0.0
-      },
-      "variants": [
-        {
-          "variant_id": "size-S",
-          "name": "Size S",
-          "bsl_range_mm": [
-            265,
-            320
-          ],
-          "front_unit": {
-            "holes": [
-              {
-                "x_from_tip": -69.0,
-                "y": 23.0,
-                "label": "front_rear_right"
-              },
-              {
-                "x_from_tip": -69.0,
-                "y": -23.0,
-                "label": "front_rear_left"
-              },
-              {
-                "x_from_tip": -121.0,
-                "y": 23.0,
-                "label": "front_fore_right"
-              },
-              {
-                "x_from_tip": -121.0,
-                "y": -23.0,
-                "label": "front_fore_left"
-              }
-            ]
-          },
-          "heel_unit": {
-            "holes": [
-              {
-                "x_from_tip": -287.0,
-                "y": 23.0,
-                "label": "heel_front_right"
-              },
-              {
-                "x_from_tip": -287.0,
-                "y": -23.0,
-                "label": "heel_front_left"
-              },
-              {
-                "x_from_tip": -323.0,
-                "y": 23.0,
-                "label": "heel_rear_right"
-              },
-              {
-                "x_from_tip": -323.0,
-                "y": -23.0,
-                "label": "heel_rear_left"
-              }
-            ],
-            "adjustment_range_mm": 0.0
-          }
-        },
-        {
-          "variant_id": "size-L",
-          "name": "Size L",
-          "bsl_range_mm": [
-            300,
-            360
-          ],
-          "front_unit": {
-            "holes": [
-              {
-                "x_from_tip": -69.0,
-                "y": 23.0,
-                "label": "front_rear_right"
-              },
-              {
-                "x_from_tip": -69.0,
-                "y": -23.0,
-                "label": "front_rear_left"
-              },
-              {
-                "x_from_tip": -121.0,
-                "y": 23.0,
-                "label": "front_fore_right"
-              },
-              {
-                "x_from_tip": -121.0,
-                "y": -23.0,
-                "label": "front_fore_left"
-              }
-            ]
-          },
-          "heel_unit": {
-            "holes": [
-              {
-                "x_from_tip": -327.0,
-                "y": 23.0,
-                "label": "heel_front_right"
-              },
-              {
-                "x_from_tip": -327.0,
-                "y": -23.0,
-                "label": "heel_front_left"
-              },
-              {
-                "x_from_tip": -363.0,
-                "y": 23.0,
-                "label": "heel_rear_right"
-              },
-              {
-                "x_from_tip": -363.0,
-                "y": -23.0,
-                "label": "heel_rear_left"
-              }
-            ],
-            "adjustment_range_mm": 0.0
-          }
-        }
-      ]
-    },
-    {
-      "id": "marker-mseries",
-      "name": "Marker M-Series",
-      "aliases": [
-        "Marker M3",
-        "Marker M10",
-        "Marker M12"
-      ],
-      "category": "alpine",
-      "source_pdf": "alpine/Bohrschablone_Marker-MSeries.pdf",
-      "verified": true,
-      "notes": "Verified 2026-04-15 (automated). Front unit confirmed: fore holes x=+56mm y=±18.0mm, rear holes x=0mm y=±18.0mm — all match PDF. Heel unit: heel_front y corrected from ±21.0mm to ±10.5mm — PDF shows 21mm total lateral span for front heel holes ('21 mm' horizontal label + geometric measurement), while rear heel holes confirm ±21.0mm ('42 mm' label). Heel longitudinal positions (x=-65, x=-86) could not be independently verified due to two-part template assembly layout. [verified 2026-04-15]",
-      "bsl_range_mm": [
-        260,
-        360
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 0.0,
-            "y": 18.0,
-            "label": "front_rear_right"
-          },
-          {
-            "x": 0.0,
-            "y": -18.0,
-            "label": "front_rear_left"
-          },
-          {
-            "x": 56.0,
-            "y": 18.0,
-            "label": "front_fore_right"
-          },
-          {
-            "x": 56.0,
-            "y": -18.0,
-            "label": "front_fore_left"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -65.0,
-            "y": 10.5,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -65.0,
-            "y": -10.5,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -86.0,
-            "y": 21.0,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -86.0,
-            "y": -21.0,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 10.0
-      },
-      "variants": []
-    },
-    {
-      "id": "marker-ten",
-      "name": "Marker Ten Free",
-      "aliases": [
-        "Marker Ten"
-      ],
-      "category": "alpine",
-      "source_pdf": "alpine/Bohrschablone_Marker-Ten.pdf",
-      "verified": true,
-      "notes": "Verified 2026-04-15 (automated). Front unit confirmed: fore holes x=+31mm y=±18.0mm (PDF text '31 mm' fore-aft, '36 mm' lateral), rear holes x=0mm y=±18.0mm — all match JSON. Heel unit: heel_front x=-65mm y=±21mm confirmed by PDF vector circles at cy=272.18mm (42mm lateral span, '42 mm' text label; '65 mm' dimension from boot-center reference). Adjustment range ±10mm confirmed ('\\+/- 10 mm' text). Heel_rear holes (x=-86mm, y=±21mm) not directly observable in PDF — fall at cy≈293mm, partially beyond A4 page boundary; 21mm fore-aft spacing implied by template annotation. Template also shows reference indicator circles at cy=192.18mm (21mm total span, 15mm from heel-edge reference) — these are boot-edge alignment marks, not drill holes. [verified 2026-04-15]",
-      "bsl_range_mm": [
-        260,
-        360
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 0.0,
-            "y": 18.0,
-            "label": "front_rear_right"
-          },
-          {
-            "x": 0.0,
-            "y": -18.0,
-            "label": "front_rear_left"
-          },
-          {
-            "x": 31.0,
-            "y": 18.0,
-            "label": "front_fore_right"
-          },
-          {
-            "x": 31.0,
-            "y": -18.0,
-            "label": "front_fore_left"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -65.0,
-            "y": 21.0,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -65.0,
-            "y": -21.0,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -86.0,
-            "y": 21.0,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -86.0,
-            "y": -21.0,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 10.0
       },
       "variants": []
     },
@@ -1472,427 +823,6 @@
       "variants": []
     },
     {
-      "id": "dynafit-radical",
-      "name": "Dynafit Radical (TLT) V1",
-      "aliases": [
-        "Dynafit Radical",
-        "TLT Radical"
-      ],
-      "category": "lt",
-      "source_pdf": "lt/Bohrschablone_Dynafit-Radical.pdf",
-      "verified": true,
-      "notes": "Tech binding V1.0. [verified 2026-04-17]",
-      "bsl_range_mm": [
-        260,
-        360
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 28.25,
-            "y": 15.0,
-            "label": "toe_right",
-            "row": "toe_line"
-          },
-          {
-            "x": 28.25,
-            "y": -15.0,
-            "label": "toe_left",
-            "row": "toe_line"
-          },
-          {
-            "x": 13.25,
-            "y": 15.0,
-            "label": "pin_upper_right",
-            "row": "pin_line"
-          },
-          {
-            "x": 13.25,
-            "y": -15.0,
-            "label": "pin_upper_left",
-            "row": "pin_line"
-          },
-          {
-            "x": 0.0,
-            "y": 15.0,
-            "label": "pin_lower_right",
-            "row": "lower_pin"
-          },
-          {
-            "x": 0.0,
-            "y": -15.0,
-            "label": "pin_lower_left",
-            "row": "lower_pin"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -52.5,
-            "y": 18.0,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -52.5,
-            "y": -18.0,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -94.75,
-            "y": 18.0,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -94.75,
-            "y": -18.0,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 0.0
-      },
-      "variants": []
-    },
-    {
-      "id": "dynafit-radical2",
-      "name": "Dynafit Radical 2",
-      "aliases": [
-        "Dynafit Radical 2",
-        "TLT Radical 2"
-      ],
-      "category": "lt",
-      "source_pdf": "lt/Bohrschablone_Dynafit_Radical2.pdf",
-      "verified": true,
-      "notes": "Updated Radical. CORRECTION 2026-04-17: front_unit y corrected from ±18.0mm to ±21.0mm for all 8 holes — PDF vector circles measure exactly ±21.00mm lateral from centerline (59.53pt × 0.352778 mm/pt), confirmed by '42 mm' label in PDF (total lateral span = 42mm). Heel unit y=±18mm confirmed correct via '36 mm' labels and pixel measurement. x-coords confirmed: toe_line x=58mm (axial gap between shown hole rows = 58.00mm), mid-to-pin_upper distance = 26mm (PDF label), heel span = 87.5mm (PDF label). adjustment_range=0.0 consistent with fixed-heel Radical 2 design. [verified 2026-04-17]",
-      "bsl_range_mm": [
-        260,
-        360
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 58.0,
-            "y": 21.0,
-            "label": "toe_right",
-            "row": "toe_line"
-          },
-          {
-            "x": 58.0,
-            "y": -21.0,
-            "label": "toe_left",
-            "row": "toe_line"
-          },
-          {
-            "x": 36.0,
-            "y": 21.0,
-            "label": "mid_right",
-            "row": "mid_line"
-          },
-          {
-            "x": 36.0,
-            "y": -21.0,
-            "label": "mid_left",
-            "row": "mid_line"
-          },
-          {
-            "x": 10.0,
-            "y": 21.0,
-            "label": "pin_upper_right",
-            "row": "pin_line"
-          },
-          {
-            "x": 10.0,
-            "y": -21.0,
-            "label": "pin_upper_left",
-            "row": "pin_line"
-          },
-          {
-            "x": 0.0,
-            "y": 21.0,
-            "label": "pin_lower_right",
-            "row": "lower_pin"
-          },
-          {
-            "x": 0.0,
-            "y": -21.0,
-            "label": "pin_lower_left",
-            "row": "lower_pin"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -58.0,
-            "y": 18.0,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -58.0,
-            "y": -18.0,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -145.5,
-            "y": 18.0,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -145.5,
-            "y": -18.0,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 0.0
-      },
-      "variants": []
-    },
-    {
-      "id": "dynafit-superlight",
-      "name": "Dynafit TLT Superlite",
-      "aliases": [
-        "Dynafit Superlite",
-        "TLT Superlite"
-      ],
-      "category": "lt",
-      "source_pdf": "lt/Bohrschablone_Dynafit-Superlight.pdf",
-      "verified": true,
-      "notes": "Lightweight tech. Corrected 2026-04-18: heel_rear y from +/-19 to +/-14 to match PDF '28 mm' rear-row label. Note: PDF heel front row labels '38 mm' (=+/-19) but drawn geometry measures 34 mm (=+/-17); the '38 mm' label is treated as authoritative per DB convention, matching the Radical reference. Front-unit schema keeps 3 conceptual rows (toe_line, pin_line, lower_pin) consistent with other Dynafit tech entries (e.g. Radical); PDF itself shows only 4 drilled holes - the 'pin_line' row is a dashed orientation reference, not drilled. [verified 2026-04-18]",
-      "bsl_range_mm": [
-        260,
-        360
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 28.0,
-            "y": 15.0,
-            "label": "toe_right",
-            "row": "toe_line"
-          },
-          {
-            "x": 28.0,
-            "y": -15.0,
-            "label": "toe_left",
-            "row": "toe_line"
-          },
-          {
-            "x": 13.25,
-            "y": 15.0,
-            "label": "pin_upper_right",
-            "row": "pin_line"
-          },
-          {
-            "x": 13.25,
-            "y": -15.0,
-            "label": "pin_upper_left",
-            "row": "pin_line"
-          },
-          {
-            "x": 0.0,
-            "y": 15.0,
-            "label": "pin_lower_right",
-            "row": "lower_pin"
-          },
-          {
-            "x": 0.0,
-            "y": -15.0,
-            "label": "pin_lower_left",
-            "row": "lower_pin"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -28.0,
-            "y": 19.0,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -28.0,
-            "y": -19.0,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -56.0,
-            "y": 14.0,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -56.0,
-            "y": -14.0,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 0.0
-      },
-      "variants": []
-    },
-    {
-      "id": "dynafit-vertical-speed-g3-onyx",
-      "name": "Dynafit TLT Vertical/Speed / G3 Onyx",
-      "aliases": [
-        "Dynafit Vertical",
-        "Dynafit Speed",
-        "G3 Onyx"
-      ],
-      "category": "lt",
-      "source_pdf": "lt/Bohrschablone_Dynafit-Vertical-Speed_G3-Onyx.pdf",
-      "verified": true,
-      "notes": "Verified 2026-04-18 (automated). All Dynafit Vertical/Speed coordinates confirmed against PDF: toe_line x=26.5mm (PDF: '26.5 mm' label), lower row x=0mm (PDF: '26.5 mm' vertical from toe line down to bottom row), y=+/-15mm for all front holes (PDF: '30 mm' lateral span). Heel: heel_front x=-52.5mm (PDF: '52.5 mm' label), heel_rear x=-94.75mm (PDF: '42.25 mm' rear-of-front), heel_front y=+/-16mm (PDF: '32 mm' lateral), heel_rear y=+/-18mm (PDF: '36 mm' lateral). adjustment_range +/-9mm (PDF: '+/- 9 mm (G3 Onyx)' = 9.0 per DB +/- half-value convention). bsl_range 260-360mm confirmed. Front-unit schema keeps 3 conceptual rows (toe_line, pin_line, lower_pin) consistent with other Dynafit tech entries (e.g. Radical, Superlite); PDF itself shows only 4 drilled holes - the 'pin_line' row at x=13.25 is a dashed orientation reference, not drilled. NOTE on G3 Onyx variants: PDF labels alternative toe_line positions for G3 Onyx at +/-7.5mm offset (so G3 Onyx toe_line could be at x=19 or x=34); these are not represented as separate variants in this entry but the standard Dynafit positions are kept as primary. Use Dynafit positions for G3 Onyx unless a specific Onyx-variant template is required. [verified 2026-04-18]",
-      "bsl_range_mm": [
-        260,
-        360
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 26.5,
-            "y": 15.0,
-            "label": "toe_right",
-            "row": "toe_line"
-          },
-          {
-            "x": 26.5,
-            "y": -15.0,
-            "label": "toe_left",
-            "row": "toe_line"
-          },
-          {
-            "x": 13.25,
-            "y": 15.0,
-            "label": "pin_upper_right",
-            "row": "pin_line"
-          },
-          {
-            "x": 13.25,
-            "y": -15.0,
-            "label": "pin_upper_left",
-            "row": "pin_line"
-          },
-          {
-            "x": 0.0,
-            "y": 15.0,
-            "label": "pin_lower_right",
-            "row": "lower_pin"
-          },
-          {
-            "x": 0.0,
-            "y": -15.0,
-            "label": "pin_lower_left",
-            "row": "lower_pin"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -52.5,
-            "y": 16.0,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -52.5,
-            "y": -16.0,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -94.75,
-            "y": 18.0,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -94.75,
-            "y": -18.0,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 9.0
-      },
-      "variants": []
-    },
-    {
-      "id": "fritschi-diamir-vipec",
-      "name": "Fritschi Diamir Vipec",
-      "aliases": [
-        "Diamir Vipec",
-        "Vipec"
-      ],
-      "category": "lt",
-      "source_pdf": "lt/Bohrschablone_Diamir-Vipec.pdf",
-      "verified": true,
-      "notes": "Tech binding with wide toe horn. [verified 2026-04-19] Corrections from PDF: (1) Front unit has only 4 holes, not 6 — removed the 'pin_line' pair at x=26 (the pin line is a reference/dashed line only in the PDF, with no holes on it; the 15mm note refers to the distance between toe_line and pin_line reference). (2) Heel rear pair updated from x=-88 to x=-120: PDF dimension clearly shows 60mm between heel_front centerline and heel_rear centerline (was 28mm in JSON). Adjustment range kept at 14.0 (PDF shows '+/- 14 mm', interpreted as half-range consistent with DB convention). PDF also shows 16.5mm offset from heel_front to heel_edge reference — retained heel_front x=-60 under existing DB convention (not re-derived).",
-      "bsl_range_mm": [
-        260,
-        360
-      ],
-      "mounting_reference": "half_bsl",
-      "drill_diameter_mm": 4.1,
-      "front_unit": {
-        "holes": [
-          {
-            "x": 66.0,
-            "y": 22.0,
-            "label": "toe_right",
-            "row": "toe_line"
-          },
-          {
-            "x": 66.0,
-            "y": -22.0,
-            "label": "toe_left",
-            "row": "toe_line"
-          },
-          {
-            "x": 0.0,
-            "y": 20.0,
-            "label": "pin_lower_right",
-            "row": "lower_pin"
-          },
-          {
-            "x": 0.0,
-            "y": -20.0,
-            "label": "pin_lower_left",
-            "row": "lower_pin"
-          }
-        ]
-      },
-      "heel_unit": {
-        "holes": [
-          {
-            "x": -60.0,
-            "y": 14.0,
-            "label": "heel_front_right"
-          },
-          {
-            "x": -60.0,
-            "y": -14.0,
-            "label": "heel_front_left"
-          },
-          {
-            "x": -120.0,
-            "y": 14.0,
-            "label": "heel_rear_right"
-          },
-          {
-            "x": -120.0,
-            "y": -14.0,
-            "label": "heel_rear_left"
-          }
-        ],
-        "adjustment_range_mm": 14.0
-      },
-      "variants": []
-    },
-    {
       "id": "salomon-shift-mnc",
       "name": "Salomon Shift MNC 13",
       "aliases": [
@@ -1912,62 +842,51 @@
       "front_unit": {
         "holes": [
           {
-            "x": 70.0,
+            "x": -45.0,
+            "y": 0.0,
+            "label": "front_center",
+          },
+		  {
+            "x": 20.0,
             "y": 20.0,
-            "label": "toe_right",
-            "row": "toe_line"
+            "label": "front_fore_right",
           },
           {
-            "x": 70.0,
+            "x": 20.0,
             "y": -20.0,
-            "label": "toe_left",
-            "row": "toe_line"
+            "label": "front_fore_left_left",
           },
           {
-            "x": 35.0,
-            "y": 20.0,
-            "label": "mid_right",
-            "row": "mid_line"
-          },
-          {
-            "x": 35.0,
-            "y": -20.0,
-            "label": "mid_left",
-            "row": "mid_line"
-          },
-          {
-            "x": 0.0,
+            "x": 90.0,
             "y": 15.0,
-            "label": "pin_right",
-            "row": "pin_line"
+            "label": "front_rear_right",
           },
           {
-            "x": 0.0,
+            "x": 90.0,
             "y": -15.0,
-            "label": "pin_left",
-            "row": "pin_line"
+            "label": "front_rear_left",
           }
         ]
       },
       "heel_unit": {
         "holes": [
           {
-            "x": -68.0,
+            "x": -15.0,
             "y": 18.0,
             "label": "heel_front_right"
           },
           {
-            "x": -68.0,
+            "x": -15.0,
             "y": -18.0,
             "label": "heel_front_left"
           },
           {
-            "x": -136.0,
+            "x": 53.0,
             "y": 18.0,
             "label": "heel_rear_right"
           },
           {
-            "x": -136.0,
+            "x": 53.0,
             "y": -18.0,
             "label": "heel_rear_left"
           }
