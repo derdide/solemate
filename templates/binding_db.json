@@ -844,27 +844,27 @@
           {
             "x": -45.0,
             "y": 0.0,
-            "label": "front_center",
+            "label": "front_center"
           },
 		  {
             "x": 20.0,
             "y": 20.0,
-            "label": "front_fore_right",
+            "label": "front_fore_right"
           },
           {
             "x": 20.0,
             "y": -20.0,
-            "label": "front_fore_left_left",
+            "label": "front_fore_left_left"
           },
           {
             "x": 90.0,
             "y": 15.0,
-            "label": "front_rear_right",
+            "label": "front_rear_right"
           },
           {
             "x": 90.0,
             "y": -15.0,
-            "label": "front_rear_left",
+            "label": "front_rear_left"
           }
         ]
       },
