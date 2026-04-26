@@ -147,48 +147,6 @@ def compute_absolute_holes(
         for h in binding["heel_unit"]["holes"]:
             _add(h, "heel", x_offset=bsl_mm / 2.0)
 
-    elif ref == "boot_tip":
-        # Duke/Baron: holes given relative to boot tip
-        # boot_tip_x (in ski frame) = mounting_point_x + bsl_mm / 2
-        boot_tip_x = mounting_point_x + bsl_mm / 2.0
-
-        # Select variant
-        variants = binding.get("variants") or []
-        if variant_id:
-            variant = next((v for v in variants if v["variant_id"] == variant_id), None)
-        else:
-            # Pick the first variant whose BSL range includes bsl_mm
-            variant = next(
-                (v for v in variants
-                 if v["bsl_range_mm"][0] <= bsl_mm <= v["bsl_range_mm"][1]),
-                variants[0] if variants else None,
-            )
-        if variant is None:
-            raise ValueError(f"No suitable variant found for BSL {bsl_mm}mm in '{binding['name']}'")
-
-        for h in variant["front_unit"]["holes"]:
-            tx = h["x_from_tip"]   # negative value
-            ty = h["y"]
-            holes.append({
-                "x_abs": boot_tip_x + tx,
-                "y_abs": ty,
-                "label": h["label"],
-                "unit": "front",
-                "template_x": tx,
-                "template_y": ty,
-            })
-        for h in variant["heel_unit"]["holes"]:
-            tx = h["x_from_tip"]
-            ty = h["y"]
-            holes.append({
-                "x_abs": boot_tip_x + tx,
-                "y_abs": ty,
-                "label": h["label"],
-                "unit": "heel",
-                "template_x": tx,
-                "template_y": ty,
-            })
-
     elif ref == "fixed":
         # Demo/rental: no BSL scaling; template origin = mounting_point_x
         for h in binding["front_unit"]["holes"]:
@@ -239,6 +197,7 @@ def check_binding_conflicts(
     min_separation_mm: float = DEFAULT_MIN_SEPARATION_MM,
     reuse_tolerance_mm: float = REUSE_TOLERANCE_MM,
     variant_id: Optional[str] = None,
+    heel_offset_mm: Optional[float] = None,  # if set, skip search and use directly
 ) -> BindingConflictResult:
     """
     Full conflict analysis for one binding at one BSL.
@@ -247,14 +206,6 @@ def check_binding_conflicts(
     candidate_holes = compute_absolute_holes(binding, bsl_mm, mounting_point_x, variant_id)
     front_holes = [h for h in candidate_holes if h["unit"] == "front"]
     heel_holes  = [h for h in candidate_holes if h["unit"] == "heel"]
-
-    # For boot_tip bindings, adjustment_range lives in the selected variant's heel_unit
-    if binding["mounting_reference"] == "boot_tip" and variant_id:
-        variants = binding.get("variants") or []
-        _variant = next((v for v in variants if v["variant_id"] == variant_id), None)
-        adj_range = (_variant["heel_unit"].get("adjustment_range_mm") or 0.0) if _variant else 0.0
-    else:
-        adj_range = binding["heel_unit"].get("adjustment_range_mm") or 0.0
 
     # --- Front unit (no positional adjustment) ---
     front_analyses = [
@@ -275,7 +226,17 @@ def check_binding_conflicts(
     ]
     best_c, best_r = _score(best_heel_analyses)
 
-    if adj_range > 0 and (best_c > 0 or best_r < len(heel_holes)):
+    adj_range = binding.get("heel_unit", {}).get("adjustment_range_mm", 0.0)
+
+    if heel_offset_mm is not None:
+        # Use provided offset directly (clamped to valid range)
+        best_offset = max(-adj_range, min(adj_range, heel_offset_mm)) if adj_range > 0 else 0.0
+        shifted = [{**h, "x_abs": h["x_abs"] + best_offset} for h in heel_holes]
+        best_heel_analyses = [
+            analyze_hole(s, existing_holes_mm, min_separation_mm, reuse_tolerance_mm)
+            for s in shifted
+        ]
+    elif adj_range > 0 and (best_c > 0 or best_r < len(heel_holes)):
         steps = int(adj_range * 2)  # 0.5mm steps
         for step in range(-steps, steps + 1):
             offset = step / 2.0

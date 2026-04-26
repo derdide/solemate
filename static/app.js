@@ -2,7 +2,6 @@
 'use strict';
 
 // ── Global state ─────────────────────────────────────────────────────────
-let _token       = sessionStorage.getItem('sbc_token') || '';
 let _imageFile   = null;
 let _imageEl     = null;   // Image() object for canvas drawing
 let _lastResp    = null;   // last /api/analyze response
@@ -26,26 +25,11 @@ let _calScale     = 1.0;    // displayW / naturalWidth
 let _editMode    = false;
 let _editedHoles = null;   // null = use auto-detected; array = user-edited list
 
-// ── Token gate ───────────────────────────────────────────────────────────
-(function initTokenGate() {
-  if (_token) {
-    fetch(`/api/health?token=${encodeURIComponent(_token)}`)
-      .then(r => { if (r.ok) dismissGate(); })
-      .catch(() => {});
-  }
-})();
-
-function submitToken() {
-  const val = document.getElementById('token-input').value.trim();
-  fetch(`/api/health?token=${encodeURIComponent(val)}`)
-    .then(r => {
-      if (r.ok) { _token = val; sessionStorage.setItem('sbc_token', val); dismissGate(); }
-      else       { document.getElementById('token-error').style.display = 'block'; }
-    })
-    .catch(() => { document.getElementById('token-error').style.display = 'block'; });
-}
-function dismissGate() { document.getElementById('token-gate').style.display = 'none'; }
-document.getElementById('token-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitToken(); });
+// Overlay interactive controls
+let _selectedResult  = null;   // currently visualised BindingConflictResult
+let _overlayHolesMm  = [];     // existing holes in ski-frame mm (fixed at row-click time)
+let _overlayHolesPx  = [];     // same holes in pixel space (for drawing)
+let _reVisTimer      = null;   // debounce handle
 
 // ── File pick / drag-drop ────────────────────────────────────────────────
 const dropZone = document.getElementById('drop-zone');
@@ -69,45 +53,6 @@ function loadFile(file) {
   _imageEl = new Image();
   _imageEl.src = url;
   _imageEl.onload = () => { drawCalCanvas(); };
-}
-
-// ── Main analysis ────────────────────────────────────────────────────────
-async function runAnalysis() {
-  if (!_imageFile) { showError('Please select a ski photo first.'); return; }
-  const bsl = parseFloat(document.getElementById('bsl-input').value);
-  if (isNaN(bsl) || bsl < 200 || bsl > 420) { showError('Enter a valid BSL (200–420 mm).'); return; }
-
-  clearError();
-  // Reset edit mode, transversal calibration, and flip for fresh auto-detect run
-  _editMode = false;
-  _editedHoles = null;
-  _transL1 = null; _transL2 = null; _transL1Start = null; _transL2Start = null;
-  _axisFlipped = false;
-  const btnFlip = document.getElementById('btn-flip');
-  if (btnFlip) btnFlip.classList.remove('active');
-  updateEditButton();
-
-  setLoading(true, 'Detecting holes and checking bindings… (may take 10–30s if using AI)');
-
-  const fd = new FormData();
-  fd.append('image', _imageFile);
-  fd.append('bsl_mm', bsl);
-  fd.append('category', document.getElementById('cat-select').value);
-  fd.append('min_separation_mm', document.getElementById('sep-input').value);
-  fd.append('top_n', 999);
-  fd.append('bsl_test_step', 0);
-  fd.append('bsl_test_range', 0);
-
-  try {
-    const resp = await fetch(`/api/analyze?token=${encodeURIComponent(_token)}`, { method: 'POST', body: fd });
-    if (!resp.ok) throw new Error(`Server error ${resp.status}: ${await resp.text()}`);
-    _lastResp = await resp.json();
-    renderResults(_lastResp);
-  } catch (err) {
-    showError(err.message || 'Unknown error.');
-  } finally {
-    setLoading(false);
-  }
 }
 
 // ── Calibration with manual override ────────────────────────────────────
@@ -179,7 +124,7 @@ async function applyCalibrationAndAnalyze() {
   fd.append('override_holes_json', JSON.stringify(currentHoles));
 
   try {
-    const resp = await fetch(`/api/analyze?token=${encodeURIComponent(_token)}`, { method: 'POST', body: fd });
+    const resp = await fetch('/api/analyze', { method: 'POST', body: fd });
     if (!resp.ok) throw new Error(`Server error ${resp.status}: ${await resp.text()}`);
     _lastResp = await resp.json();
     renderResults(_lastResp);
@@ -553,20 +498,6 @@ function renderResults(data) {
     previewCvs.style.display = 'block';
   }
 
-  // Identified binding banner
-  const idBanner = document.getElementById('id-banner');
-  if (data.identify_matches && data.identify_matches.length > 0 && data.identify_matches[0].match_score > 0.5) {
-    const top = data.identify_matches[0];
-    idBanner.style.display = 'block';
-    idBanner.innerHTML =
-      `🔍 Previously mounted: <strong>${top.binding_name}</strong> ` +
-      `at BSL ${top.bsl_mm}mm ` +
-      `(${Math.round(top.match_score * 100)}% match, ${top.holes_matched}/${top.holes_total} holes)` +
-      (top.verified ? '' : ' <em>⚠ unverified template</em>');
-  } else {
-    idBanner.style.display = 'none';
-  }
-
   // Results table
   const tableCard = document.getElementById('results-table-card');
   const noCal     = document.getElementById('no-cal-hint');
@@ -655,44 +586,104 @@ function drawPreviewCanvas(holesPx) {
   });
 }
 
-// ── Select a binding row → re-visualize ─────────────────────────────────
-async function selectBinding(tr, result) {
+// ── Select a binding row → initialise controls + visualize ──────────────
+function selectBinding(tr, result) {
   document.querySelectorAll('#results-body tr').forEach(r => r.classList.remove('selected'));
   tr.classList.add('selected');
   document.getElementById('img-binding-label').textContent = `— ${result.binding_name}`;
   if (!_lastResp || !_lastResp.mounting_point_known) return;
 
+  _selectedResult = result;
+
+  // Compute and cache existing holes in ski-frame mm (relative to original mounting point)
   const cal = _lastResp.calibration;
-  // Axis unit vector from calibration (might be from manual or auto)
   const adx = cal.axis_dx ?? -1.0;
   const ady = cal.axis_dy ??  0.0;
-  // pixels_to_ski_mm — orientation-aware (matches Python binding_matcher.pixels_to_ski_mm)
-  function pxToSki(h) {
+  _overlayHolesMm = (_lastResp.holes_px || []).map(h => {
     const vx = h.x_px - cal.mounting_point_x_px;
     const vy = h.y_px - cal.ski_centerline_y_px;
     return {
-      x_abs:  (adx * vx + ady * vy) * cal.mm_per_pixel,
-      y_abs:  (ady * vx - adx * vy) * cal.mm_per_pixel,
+      x_abs: (adx * vx + ady * vy) * cal.mm_per_pixel,
+      y_abs: (ady * vx - adx * vy) * cal.mm_per_pixel,
     };
+  });
+  _overlayHolesPx = (_lastResp.holes_px || []).map(h => ({
+    x_px: h.x_px, y_px: h.y_px, radius_px: h.radius_px,
+  }));
+
+  // Configure BSL slider
+  const bslRange = result.bsl_range_mm;
+  const bslMin = bslRange ? bslRange[0] : Math.max(240, result.bsl_mm - 30);
+  const bslMax = bslRange ? bslRange[1] : Math.min(400, result.bsl_mm + 30);
+  _setSlider('ctrl-bsl', result.bsl_mm, bslMin, bslMax, 1);
+
+  // Configure heel offset slider (show only when binding has adjustment range)
+  const adjRange = result.adjustment_range_mm || 0;
+  const heelGroup = document.getElementById('ctrl-heel-group');
+  if (adjRange > 0) {
+    heelGroup.style.display = '';
+    _setSlider('ctrl-heel', result.heel_offset_mm || 0, -adjRange, adjRange, 0.5);
+  } else {
+    heelGroup.style.display = 'none';
   }
 
-  const fd  = new FormData();
+  // Reset mount offset to 0
+  _setSlider('ctrl-mount', 0, -30, 30, 0.5);
+
+  // Show controls card
+  document.getElementById('overlay-controls-card').style.display = '';
+
+  _scheduleReVisualize(0);
+}
+
+// Set both range and number inputs for a control group
+function _setSlider(id, value, min, max, step) {
+  const rng = document.getElementById(id);
+  const num = document.getElementById(id + '-num');
+  rng.min = min; rng.max = max; rng.step = step; rng.value = value;
+  num.min = min; num.max = max; num.step = step; num.value = value;
+}
+
+// Wire slider ↔ number input bidirectional sync + debounced re-visualize
+['ctrl-bsl', 'ctrl-heel', 'ctrl-mount'].forEach(id => {
+  const rng = document.getElementById(id);
+  const num = document.getElementById(id + '-num');
+  if (!rng || !num) return;
+  rng.addEventListener('input', () => { num.value = rng.value; _scheduleReVisualize(80); });
+  num.addEventListener('input', () => { rng.value = num.value; _scheduleReVisualize(80); });
+});
+
+function _scheduleReVisualize(delayMs) {
+  clearTimeout(_reVisTimer);
+  _reVisTimer = setTimeout(_reVisualize, delayMs);
+}
+
+async function _reVisualize() {
+  if (!_selectedResult || !_lastResp || !_imageFile) return;
+  const cal = _lastResp.calibration;
+
+  const bsl        = parseFloat(document.getElementById('ctrl-bsl').value)   || _selectedResult.bsl_mm;
+  const heelOffset = parseFloat(document.getElementById('ctrl-heel').value)  || 0;
+  const mountOff   = parseFloat(document.getElementById('ctrl-mount').value) || 0;
+
+  const fd = new FormData();
   fd.append('image', _imageFile);
-  fd.append('binding_id', result.binding_id);
-  fd.append('bsl_mm', result.bsl_mm);
-  fd.append('variant_id', result.variant_id || '');
+  fd.append('binding_id', _selectedResult.binding_id);
+  fd.append('bsl_mm', bsl);
+  fd.append('variant_id', _selectedResult.variant_id || '');
   fd.append('min_separation_mm', document.getElementById('sep-input').value);
-  fd.append('existing_holes_json', JSON.stringify(
-    (_lastResp.holes_px || []).map(h => pxToSki(h))
-  ));
-  fd.append('mm_per_pixel', cal.mm_per_pixel);
-  fd.append('mounting_point_x_px', cal.mounting_point_x_px);
-  fd.append('mounting_point_y_px', cal.ski_centerline_y_px);
-  fd.append('axis_dx', adx);
-  fd.append('axis_dy', ady);
+  fd.append('existing_holes_json',    JSON.stringify(_overlayHolesMm));
+  fd.append('existing_holes_px_json', JSON.stringify(_overlayHolesPx));
+  fd.append('mm_per_pixel',         cal.mm_per_pixel);
+  fd.append('mounting_point_x_px',  cal.mounting_point_x_px);
+  fd.append('mounting_point_y_px',  cal.ski_centerline_y_px);
+  fd.append('axis_dx', cal.axis_dx ?? -1.0);
+  fd.append('axis_dy', cal.axis_dy ??  0.0);
+  fd.append('heel_offset_mm', heelOffset);
+  fd.append('mount_offset_mm', mountOff);
 
   try {
-    const resp = await fetch(`/api/visualize?token=${encodeURIComponent(_token)}`, { method: 'POST', body: fd });
+    const resp = await fetch('/api/visualize', { method: 'POST', body: fd });
     if (!resp.ok) return;
     const data = await resp.json();
     if (data.output_image_base64) {
@@ -715,10 +706,8 @@ function showStep(n) {
 function setLoading(on, msg) {
   document.getElementById('loading').style.display = on ? 'block' : 'none';
   if (msg) document.getElementById('loading-msg').textContent = msg;
-  ['analyze-btn', 'detect-btn'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.disabled = on;
-  });
+  const analyzeBtn = document.getElementById('analyze-btn');
+  if (analyzeBtn) analyzeBtn.disabled = on;
 }
 function showError(msg) {
   const el = document.getElementById('error-notice');
