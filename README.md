@@ -2,74 +2,62 @@
 
 > *"Will my new bindings fit without drilling new holes?" — finally, a tool that attempts to answer this.*
 
-A web application that analyses a photo of a ski, detects existing binding drill holes, and tells you which bindings can be mounted without conflicts — and which ones would require new holes, partial reuse, or are just incompatible.
+A web application that helps you figure out whether a binding can be mounted on a ski that already has holes, without creating conflicts with existing drill points.
+
+You photograph the ski alongside a measuring tape, calibrate the image geometry, mark the existing holes by hand, and the app checks every binding in the database against your hole pattern — telling you what's mountable as-is, what needs new holes only, and what conflicts.
 
 **⚠️ Alpha software. Use at your own risk. Always verify results with a certified ski technician before drilling anything.**
 
 ---
 
-## What does it do?
+## What it does
 
-You upload a photo of your ski (with a measuring tape next to it), mark a few calibration points, and the app:
-
-1. Detects existing drill holes using OpenCV computer vision
-2. Lets you manually add/correct holes
-3. Checks every binding in the database against your existing holes
-4. Tells you which bindings are **mountable as-is**, which need **new holes only**, and which create **conflicts** (too close to existing holes)
-5. Optionally tests at ±30mm BSL range to catch cases where a slightly different boot sole length position would fit better — useful when a ski has been drilled for multiple boots over the years
-
-The overlay image shows the binding template on your actual ski photo so you can see exactly where the holes would land.
+1. **Calibrate** — you click 2–4 marks on a measuring tape laid alongside the ski. With 3+ marks the app corrects for camera parallax (perspective distortion along the ski axis) before doing any measurements. You also mark the ski's centre mount reference and optionally draw the ski axis for higher accuracy.
+2. **Mark holes** — click on the rectified image to mark every existing drill hole. No auto-detection; manual placement is deliberate (see [Removed features](#removed-for-now)).
+3. **Analyze** — the app projects every binding template onto the ski coordinate system and classifies each hole as reusable, new, or conflicting. Results are sorted by compatibility.
+4. **Explore** — click any binding row to overlay its template on the photo. Sliders let you adjust BSL, heel position, and mounting point offset in real time.
 
 ---
 
 ## Screenshots
 
-*(Coming eventually. For now: upload photo → click some points → get a table of results and an annotated overlay. You'll figure it out.)*
+*(Coming eventually. Upload photo → calibrate → mark holes → get a table and an annotated overlay.)*
 
 ---
 
 ## Features
 
-- 🔍 **OpenCV hole detection** — HoughCircles + blob detection, works offline, no API needed
-- ✏️ **Manual hole editor** — add or remove holes by clicking on the photo
-- 📏 **Manual calibration** — set scale from a measuring tape, mark the mounting point, set ski axis direction
-- 🔄 **Multi-BSL analysis** — tests each binding at your BSL ±30mm in 10mm steps
-- 🎿 **33 binding templates** — alpine and touring/LT, see full list below
-- 🤖 **AI fallback (optional)** — Ollama (local, free) or Claude Vision API for automatic hole detection and scale reading from the photo
-- 🐳 **Docker deployment** — one `docker compose up --build` and you're done
-- 🔑 **Optional access token** — for when you put it on a server and don't want strangers poking at it
+- 📏 **Parallax correction** — 3 or 4 tape marks fit a 1-D projective transform along the ski axis and remap the image before any measurements. Significantly improves accuracy for photos taken at an angle.
+- 🗺️ **Axis calibration** — optional edge-to-edge transversal lines constrain the ski axis more precisely than the tape alone; the mounting point is projected onto the computed centreline.
+- 🖊️ **Manual hole editor** — click to add, click again to remove. Simple and reliable.
+- 🎿 **13 binding templates** — alpine and touring/LT; see full list below.
+- 🔍 **Interactive overlay** — BSL, heel offset, and mount offset sliders update the overlay in real time; a second cross shows the offset mounting point visually without moving the calibration reference.
+- 📐 **Debug grid** — toggle a 1 cm or ½ cm grid aligned to the ski axis to verify calibration visually.
+- 🐳 **Docker deployment** — one `docker compose up --build` and you're done.
 
 ---
 
 ## Quick Start (Docker)
 
 ```bash
-# Clone the repo
-git clone https://github.com/derdide/solemate.git
-cd solemate
+git clone https://github.com/your-username/ski-binding-conflict.git
+cd ski-binding-conflict
 
-# Create your config
-cp .env.example .env
-# Edit .env — at minimum set APP_TOKEN to something random:
-# python -c "import secrets; print(secrets.token_urlsafe(32))"
-
-# Build and run
 docker compose up --build -d
 
 # Open http://localhost:8000
 ```
 
-That's it. OpenCV works out of the box with no API keys.
+No API keys or environment variables required.
 
 ---
 
-## Local Development (no Docker)
+## Local Development
 
 ```bash
 # Python 3.11+ required
 pip install -r requirements.txt
 
-# Run with hot-reload
 uvicorn main:app --host 0.0.0.0 --port 8765 --reload
 
 # Open http://localhost:8765
@@ -77,160 +65,136 @@ uvicorn main:app --host 0.0.0.0 --port 8765 --reload
 
 ---
 
-## Configuration
-
-Copy `.env.example` to `.env` and edit:
-
-```env
-# Access token for the web UI (leave empty to disable auth in dev)
-APP_TOKEN=your-long-random-string-here
-
-# Optional: Ollama Vision (local AI, no API key needed)
-# Point to your Ollama host — tried first when set
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=qwen2.5-vl:7b        # recommended; llava also works
-
-# Optional: Claude Vision API (cloud, needs key)
-# Only called if Ollama is not set or returned nothing
-ANTHROPIC_API_KEY=sk-ant-...
-CLAUDE_MODEL=claude-opus-4-6
-
-# Set to "false" to skip Claude entirely and use OpenCV + manual calibration only
-USE_CLAUDE_FALLBACK=true
-```
-
-**Without any API keys** the app works fine — you just do the calibration manually (takes about 30 seconds once you know what to click).
-
-### Ollama tip
-
-`qwen2.5-vl:7b` is the best local model for this task — it follows structured JSON instructions reliably and reads measuring tape numbers well.
-
-```bash
-ollama pull qwen2.5-vl:7b
-```
-
----
-
 ## How to Use It
 
-### Step 1 — Upload a photo
+### Step 1 — Upload & Calibrate
 
-Take a photo of your ski laid flat with a measuring tape alongside it. The tape should be clearly visible with legible tick marks. Uniform lighting helps. Phone photos work fine.
+Take a photo of your ski laid flat with a measuring tape running alongside it. The tape should have clearly visible tick marks. Phone photos work fine; uniform lighting helps.
 
-### Step 2 — Set calibration
+Click the calibration tools in order:
 
-Click the calibration buttons in order:
+| Button | What to do |
+|--------|------------|
+| **① Tape** | Click 2–4 marks at equal known spacing (e.g. every 100 mm, heel → tip). 3+ marks enable parallax correction. |
+| **② Mount pt** | Click the ski's centre mark — the half-sole reference line printed on the ski. |
+| **③ Axis L1** *(optional)* | Click one ski edge, then the opposite edge at the heel zone. Defines the ski axis better than the tape alone. |
+| **④ Axis L2** *(optional)* | Same as L1 but at the tip zone. Together L1+L2 give a precise centreline. |
+| **↩ Flip axis** | If the orange **→TIP** arrow points the wrong way, click this. |
 
-1. **① Tape** — click two clearly labelled tape marks (e.g. 10cm and 20cm apart), enter the distance in mm
-2. **② Mounting point** — click the centre mark on the ski (the half-sole line)
-3. **③ Axis L1 / ④ Axis L2** *(optional but recommended)* — click across the ski at two locations to define the ski axis precisely. The orange **→HEEL** arrow shows the computed direction; use **↩ Flip axis** if it points the wrong way.
+Click **Calibrate →**. The app sends the image to the server, applies the perspective correction if you gave 3+ tape marks, and shows you the rectified image.
 
-### Step 3 — Analyze
+### Step 2 — Mark Holes
 
-Enter your boot sole length (BSL in mm), choose a binding category, hit **Analyze**.
+Click on the rectified image to mark each existing drill hole. Click an existing circle to remove it. There is no auto-detection.
 
-The results table shows every binding sorted by compatibility. Click a row to see the binding template overlaid on your ski photo.
+Set your **Boot sole length (BSL)**, binding **category**, and **minimum hole separation** (default 14 mm), then click **Analyze →**.
+
+### Step 3 — Results
+
+The results table lists every binding sorted by compatibility:
+
+- **OK** — all template holes either reuse existing holes or land in undamaged areas
+- **CONFLICT** — one or more template holes fall too close to an existing hole
+
+Click any row to overlay the binding template on your ski photo. The sliders at the top let you adjust:
+
+- **BSL** — boot sole length (changes toe/heel separation)
+- **Heel offset** — if the binding's heel unit has a longitudinal adjustment range
+- **Mount offset** — shift the entire binding forward/back relative to your calibration point
+
+The **yellow cross** always marks your original calibration point. When mount offset ≠ 0 a **white cross** appears at the effective mounting position.
+
+The **debug grid** (1 cm or ½ cm) overlays a coordinate grid aligned to the ski axis, centred on the mount point — useful for verifying that calibration and parallax correction look right.
 
 ---
 
 ## Binding Database
 
-33 bindings covering alpine and touring/LT categories. Templates are sourced from manufacturer PDF drill guides.
+Source PDFs exist for ~33 bindings. Of those, **13 have been manually transcribed and confirmed** — dimensions cross-checked against the PDF and physically verified on bindings I actually own. The remaining ~20 have source PDFs but have not been entered into the database yet; contributions are welcome.
 
-**Verification status**: `✓` = template cross-checked against reference data. `⚠` = template entered but not independently verified — treat with extra caution.
+*"Confirmed" here means: I worked out the hole coordinates from the PDF myself, and I own the binding, so I could check it. It does not mean I physically drilled a ski and measured the result. Use your own judgement.*
 
-*Honest disclaimer: "verified" largely means I didn't make a typo transcribing the PDF. It does not mean I physically drilled a ski and measured the result. Some of these I have definitely not verified personally. Use your own judgement.*
+### In the database & confirmed (13)
 
-### Alpine
+#### Alpine (12)
 
-| Status | Binding |
-|--------|---------|
-| ✓ | Marker Jester / Griffon / Squire |
-| ✓ | Marker Duke / Baron / Tour F10/F12 |
-| ✓ | Marker Duke EPF |
-| ✓ | Marker M-Series |
-| ✓ | Marker Ten Free |
-| ✓ | Salomon Alpine Bindings |
-| ✓ | Salomon STH2 / Warden MNC |
-| ⚠ | Salomon Warden 11 |
-| ✓ | Salomon Guardian / Atomic Tracker |
-| ✓ | Salomon Rental (SC) |
-| ✓ | Tyrolia / Head Alpine |
-| ⚠ | Tyrolia / Head AAAttack13 Demo/Rental |
-| ✓ | Rossignol Axial1 / Look Pivot (pre-2005) |
-| ✓ | Rossignol Axial2 / Look PX |
-| ✓ | Rossignol FKS / Look Pivot (post-2010) |
-| ✓ | Rossignol Axial Racing / Look PX Racing |
-| ✓ | Naxo NX01/NX21 (Alpine) |
+| Binding |
+|---------|
+| Marker Jester / Griffon / Squire |
+| Salomon Alpine (4-hole toe) |
+| Salomon Alpine (3-hole toe) |
+| Salomon STH2 |
+| Salomon Warden MNC |
+| Salomon Rental |
+| Tyrolia / Head Alpine |
+| Tyrolia / Head AAAttack13 Demo/Rental |
+| Rossignol Axial1 / Look Pivot (pre-2005) |
+| Rossignol Axial2 / Look PX |
+| Rossignol FKS / Look Pivot (post-2010) |
+| Rossignol Axial Racing / Look PX Racing |
 
-### Touring / LT
+#### Touring / LT (1)
 
-| Status | Binding |
-|--------|---------|
-| ✓ | Marker Kingpin |
-| ✓ | Tyrolia / Head AAAmbition |
-| ✓ | Tyrolia / Head AAAmbition Carbon |
-| ✓ | Dynafit Radical (TLT) V1 |
-| ✓ | Dynafit Radical 2 |
-| ✓ | Dynafit TLT Superlite |
-| ✓ | Dynafit TLT Vertical/Speed / G3 Onyx |
-| ✓ | Dynafit Beast 14 |
-| ✓ | Dynafit Beast 16 |
-| ✓ | G3 Ion / Zed |
-| ✓ | Fritschi Diamir Freeride / Freeride Plus |
-| ✓ | Fritschi Diamir FreeridePro + Eagle (2010) |
-| ✓ | Fritschi Diamir Vipec |
-| ✓ | Naxo NX01/NX21 (Touring) |
-| ⚠ | Salomon MTN |
-| ⚠ | Salomon Shift MNC 13 |
+| Binding |
+|---------|
+| Salomon Shift MNC 13 |
+
+### Source PDFs available but not yet entered (~20)
+
+These bindings have manufacturer drill templates on file. What's missing is someone working out the hole coordinates and entering them in `binding_db.json`. If you own one of these and want to contribute, this is the highest-value thing you can do.
+
+**Particularly welcome:** Marker Duke / Baron / Tour F10/F12 — both EPF and non-EPF variants. The EPF toe piece uses a different hole pattern and it is not yet clear how best to model the two variants together in the database schema. If you have both and can measure them, please open an issue or PR.
+
+Other bindings with PDFs on file include (incomplete list): Marker Duke EPF, Marker M-Series, Marker Ten Free, Salomon Guardian / Atomic Tracker, Naxo NX01/NX21 (alpine and touring), Tyrolia/Head AAAmbition, Tyrolia/Head AAAmbition Carbon, Dynafit Radical V1 and V2, Dynafit TLT Superlite, Dynafit TLT Vertical/Speed / G3 Onyx, Dynafit Beast 14 and 16, G3 Ion / Zed, Fritschi Diamir Freeride, Fritschi Diamir FreeridePro + Eagle, Fritschi Diamir Vipec, Salomon MTN, Marker Kingpin.
 
 ### Adding bindings
 
-Templates live in `templates/binding_db.json`. The format is documented in the file header. Since the templates directory is mounted as a Docker volume, you can add or edit bindings without rebuilding the container. PRs with new verified templates are welcome.
+Templates live in `templates/binding_db.json`. The format is self-documented in the file. Since the templates directory is mounted as a Docker volume you can add or edit bindings without rebuilding the container.
 
 ---
 
-## Limitations & Known Issues
+## Removed for Now
 
-This is **alpha software** built for a very specific personal need. It has been tested on a small number of skis in limited conditions. Here's what you should know:
+These features existed in earlier versions and were deliberately removed. They may return.
 
-- **Hole detection is imperfect.** OpenCV struggles with dark skis, busy graphics, poor lighting, or small photos. The manual hole editor exists precisely because auto-detection will sometimes miss holes or find phantom ones. Always review the detected holes before relying on results.
+| Feature | Status | Reason |
+|---------|--------|--------|
+| **Auto hole detection** (OpenCV HoughCircles / blob) | Removed | Results were unreliable — too many false positives on dark skis or complex graphics. Manual marking is slower but actually correct. |
+| **AI hole detection** (Ollama / Claude Vision) | Removed | Code existed but was largely untested in practice. Removed rather than ship something misleading. |
+| **Multi-BSL range probing** (exact BSL ±30 mm) | Removed | Added noise to the results table without a clear UX benefit given the new manual workflow. |
+| **Access token auth** | Removed | Simplified the deployment. If you expose this publicly, put a reverse proxy in front of it. |
 
-- **AI fallbacks (Ollama / Claude) are largely untested.** The code is there and it compiles, but real-world testing has been minimal. Ollama results in particular depend heavily on which model you use and how it was trained.
+---
 
-- **The binding template database is incomplete.** 33 bindings is a start, not a finish. Notably missing: most Atomic/Salomon touring bindings, older Fritschi models, Plum, Hagan, and many others. Missing your binding? Add it from the PDF.
+## Limitations
 
-- **BSL range testing (±30mm) helps but is not magic.** It catches cases where the ski was previously mounted for a different boot size. It does not account for the heel piece's longitudinal adjustment range in a meaningful physical way.
-
-- **No warranty whatsoever.** Drilling ski holes in the wrong place can damage the ski, compromise binding retention, and create a safety hazard. This tool is a *planning aid*, not a replacement for a qualified ski technician with a drill jig.
+- **Only 13 bindings are active.** Source PDFs exist for ~33, but the remaining ~20 have not been transcribed yet. The database only includes bindings whose hole coordinates have been worked out and confirmed — see the [Binding Database](#binding-database) section for how to contribute.
+- **Parallax correction is 1-D only.** It corrects perspective distortion along the ski axis, based on the assumption that the camera is roughly centred over the ski laterally. Extreme lateral camera offsets are not handled.
+- **No warranty whatsoever.** Drilling ski holes in the wrong place can damage the ski, compromise binding retention, and create a safety hazard. This tool is a planning aid, not a substitute for a qualified ski technician with a calibrated drill jig.
 
 ---
 
 ## Project Status
 
-**Alpha. Personal project.** I built this because I needed it, and I'm sharing it because someone else might find it useful too.
+**Alpha. Personal project.** Built because I needed it; shared because someone else might too.
 
-I may continue developing it. I may not. No promises. If you file an issue I might look at it. If you submit a clean PR with a verified binding template I'll probably merge it. Beyond that: no guarantees, no support SLA, no roadmap.
-
-If you do something cool with it, I'd love to hear about it — but you're under no obligation.
+Development continues when time allows. No roadmap, no support SLA. Bug reports and binding template PRs are welcome.
 
 ---
 
 ## Contributing
 
-- **New binding templates** — most useful contribution. Include the source PDF if possible, and note whether you've physically verified the template on a real ski.
-- **Bug reports** — include the ski photo (or a description of it), what you expected, and what happened.
-- **Code improvements** — keep it simple. This is not a startup.
+- **New binding templates** — most useful contribution. Include the source PDF, note whether you verified it on a real ski, and open a PR.
+- **Bug reports** — include a photo (or describe it), what you expected, and what happened.
+- **Code** — keep it simple.
 
 ---
 
 ## License
 
-MIT License — do whatever you want with it, just keep the copyright notice.
+MIT License — do whatever you want with it, keep the copyright notice.
 
 ```
-MIT License
-
 Copyright (c) 2025
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -254,4 +218,4 @@ SOFTWARE.
 
 ---
 
-*Built with FastAPI, OpenCV, and a pile of PDF drill templates. Tested on an embarrassingly small number of actual skis.*
+*Built with FastAPI, OpenCV, and manufacturer PDF drill templates.*
