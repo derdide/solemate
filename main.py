@@ -33,6 +33,7 @@ from src.binding_matcher import (
     pixels_to_ski_mm,
     rank_all_bindings,
 )
+from src.calibrator import rectify_image
 from src.hole_detector import DetectedHole
 from src.visualizer import draw_overlay
 
@@ -180,7 +181,6 @@ async def api_calibrate(
         # Perspective correction when 3+ marks available
         perspective_corrected = False
         if n >= 3:
-            from src.calibrator import rectify_image
             img_out, (mpx, mpy) = rectify_image(img, tape_points, (mpx, mpy), adx, ady)
             perspective_corrected = True
         else:
