@@ -31,6 +31,10 @@ let _overlayHolesMm  = [];     // existing holes in ski-frame mm (fixed at row-c
 let _overlayHolesPx  = [];     // same holes in pixel space (for drawing)
 let _reVisTimer      = null;   // debounce handle
 
+// Debug overlay canvas
+let _gridEnabled    = false;
+let _gridSpacingMm  = 10;      // 10 mm = 1 cm
+
 // ── File pick / drag-drop ────────────────────────────────────────────────
 const dropZone = document.getElementById('drop-zone');
 const fileInput = document.getElementById('file-input');
@@ -486,14 +490,15 @@ function renderResults(data) {
     (data.mounting_point_known ? ' · mounting point set' : ' · mounting point unknown');
 
   // Annotated overlay image (shown when full calibration available)
-  const overlayImg = document.getElementById('overlay-img');
-  const previewCvs = document.getElementById('preview-canvas');
+  const overlayImg       = document.getElementById('overlay-img');
+  const overlayContainer = document.getElementById('overlay-img-container');
+  const previewCvs       = document.getElementById('preview-canvas');
   if (data.output_image_base64) {
     overlayImg.src = 'data:image/jpeg;base64,' + data.output_image_base64;
-    overlayImg.style.display = 'block';
+    overlayContainer.style.display = 'block';
     previewCvs.style.display = 'none';
   } else {
-    overlayImg.style.display = 'none';
+    overlayContainer.style.display = 'none';
     drawPreviewCanvas(data.holes_px || []);
     previewCvs.style.display = 'block';
   }
@@ -559,6 +564,12 @@ function renderResults(data) {
     tr.addEventListener('click', () => selectBinding(tr, r));
     tbody.appendChild(tr);
   });
+
+  // Auto-select first result so controls are visible immediately
+  const firstTr = tbody.querySelector('tr');
+  if (firstTr && data.results.length > 0) {
+    selectBinding(firstTr, data.results[0]);
+  }
 }
 
 // ── Preview canvas (holes only, no calibration) ──────────────────────────
@@ -649,8 +660,16 @@ function _setSlider(id, value, min, max, step) {
   const rng = document.getElementById(id);
   const num = document.getElementById(id + '-num');
   if (!rng || !num) return;
-  rng.addEventListener('input', () => { num.value = rng.value; _scheduleReVisualize(80); });
-  num.addEventListener('input', () => { rng.value = num.value; _scheduleReVisualize(80); });
+  rng.addEventListener('input', () => {
+    num.value = rng.value;
+    if (id === 'ctrl-mount') _drawOverlayCanvas(); // cross moves immediately
+    _scheduleReVisualize(80);
+  });
+  num.addEventListener('input', () => {
+    rng.value = num.value;
+    if (id === 'ctrl-mount') _drawOverlayCanvas();
+    _scheduleReVisualize(80);
+  });
 });
 
 function _scheduleReVisualize(delayMs) {
@@ -688,10 +707,118 @@ async function _reVisualize() {
     const data = await resp.json();
     if (data.output_image_base64) {
       document.getElementById('overlay-img').src = 'data:image/jpeg;base64,' + data.output_image_base64;
-      document.getElementById('overlay-img').style.display = 'block';
+      document.getElementById('overlay-img-container').style.display = 'block';
       document.getElementById('preview-canvas').style.display = 'none';
+      _drawOverlayCanvas();
     }
   } catch (_) {}
+}
+
+// ── Overlay canvas (crosses + debug grid) ────────────────────────────────
+function _drawOverlayCanvas() {
+  if (!_selectedResult || !_lastResp || !_imageEl) return;
+  const container = document.getElementById('overlay-img-container');
+  if (!container || container.style.display === 'none') return;
+
+  const canvas = document.getElementById('overlay-canvas');
+  const cal    = _lastResp.calibration;
+  const natW   = _imageEl.naturalWidth;
+  const natH   = _imageEl.naturalHeight;
+  canvas.width  = natW;
+  canvas.height = natH;
+
+  const ctx  = canvas.getContext('2d');
+  ctx.clearRect(0, 0, natW, natH);
+
+  const mpx  = cal.mounting_point_x_px;
+  const mpy  = cal.ski_centerline_y_px;
+  const adx  = cal.axis_dx  ?? -1.0;
+  const ady  = cal.axis_dy  ??  0.0;
+  const mpp  = cal.mm_per_pixel;
+
+  const mountOff = parseFloat(document.getElementById('ctrl-mount').value) || 0;
+  const offPx    = mountOff / mpp;
+  const offX     = mpx + offPx * adx;
+  const offY     = mpy + offPx * ady;
+
+  const armPx = Math.max(20, natW * 0.014);
+  const lw    = Math.max(2,  natW * 0.0018);
+
+  if (_gridEnabled) _drawGrid(ctx, natW, natH, mpx, mpy, adx, ady, mpp);
+
+  // Fixed yellow cross at original calibration mount point
+  _drawCross(ctx, mpx, mpy, armPx, lw, '#ffd700', null);
+
+  // Moving white/black cross at offset position (only when offset is non-zero)
+  if (Math.abs(mountOff) >= 0.1) {
+    _drawCross(ctx, offX, offY, armPx * 0.85, lw, '#ffffff', '#000000');
+  }
+}
+
+function _drawCross(ctx, x, y, arm, lw, color, borderColor) {
+  ctx.lineCap = 'round';
+  if (borderColor) {
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth   = lw * 3.5;
+    ctx.beginPath(); ctx.moveTo(x - arm, y); ctx.lineTo(x + arm, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y - arm); ctx.lineTo(x, y + arm); ctx.stroke();
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = lw;
+  ctx.beginPath(); ctx.moveTo(x - arm, y); ctx.lineTo(x + arm, y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x, y - arm); ctx.lineTo(x, y + arm); ctx.stroke();
+}
+
+function _drawGrid(ctx, natW, natH, mpx, mpy, adx, ady, mpp) {
+  const spacingPx = _gridSpacingMm / mpp;
+  const pdx = -ady;   // perpendicular to ski axis
+  const pdy =  adx;
+  const diagLen = Math.hypot(natW, natH) + spacingPx * 2;
+  const nLines  = Math.ceil(diagLen / spacingPx) + 1;
+  const lw = Math.max(1, natW * 0.0008);
+
+  ctx.save();
+  ctx.lineWidth = lw;
+  ctx.setLineDash([natW * 0.004, natW * 0.004]);
+
+  for (let i = -nLines; i <= nLines; i++) {
+    const isCenter = i === 0;
+    ctx.strokeStyle = isCenter
+      ? 'rgba(255,255,100,0.45)'
+      : 'rgba(255,255,255,0.18)';
+
+    // Lines parallel to ski axis at lateral offset i * spacingPx
+    const ox1 = mpx + i * spacingPx * pdx;
+    const oy1 = mpy + i * spacingPx * pdy;
+    ctx.beginPath();
+    ctx.moveTo(ox1 - adx * diagLen, oy1 - ady * diagLen);
+    ctx.lineTo(ox1 + adx * diagLen, oy1 + ady * diagLen);
+    ctx.stroke();
+
+    // Lines perpendicular to ski axis at along-axis offset i * spacingPx
+    const ox2 = mpx + i * spacingPx * adx;
+    const oy2 = mpy + i * spacingPx * ady;
+    ctx.beginPath();
+    ctx.moveTo(ox2 - pdx * diagLen, oy2 - pdy * diagLen);
+    ctx.lineTo(ox2 + pdx * diagLen, oy2 + pdy * diagLen);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function toggleGrid() {
+  _gridEnabled = !_gridEnabled;
+  const btn = document.getElementById('btn-grid');
+  btn.textContent = _gridEnabled ? 'Grid on' : 'Grid off';
+  btn.classList.toggle('active', _gridEnabled);
+  _drawOverlayCanvas();
+}
+
+function setGridSpacing(mm) {
+  _gridSpacingMm = mm;
+  document.getElementById('btn-grid-1cm').classList.toggle('active', mm === 10);
+  document.getElementById('btn-grid-5mm').classList.toggle('active', mm === 5);
+  _drawOverlayCanvas();
 }
 
 // ── Step navigation ──────────────────────────────────────────────────────
