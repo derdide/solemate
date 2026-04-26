@@ -22,7 +22,9 @@ You photograph the ski alongside a measuring tape, calibrate the image geometry,
 ## Screenshots
 
 *(Coming eventually. Upload photo → calibrate → mark holes → get a table and an annotated overlay.)*
-
+![Calibration](https://skipass.fr/p/imagebank/2/4/1/241806-bxKTu3zX.pn "Calibration")
+![Holes marking](https://skipass.fr/p/imagebank/2/4/1/241807-4183A1Rd.png "Holes marking")
+![Binding analysis](https://skipass.fr/p/imagebank/2/4/1/241808-pz0Hb4w8.png "Binding analysis")
 ---
 
 ## Features
