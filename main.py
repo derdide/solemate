@@ -21,6 +21,9 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+import cv2
+import numpy as np
+
 from src.binding_matcher import (
     BindingConflictResult,
     ScaleCalibration,
@@ -130,6 +133,78 @@ def get_template(binding_id: str, bsl: float = 300.0, variant: Optional[str] = N
             for h in holes
         ],
     }
+
+
+# ---------------------------------------------------------------------------
+# Calibration endpoint — perspective correction + scale + axis
+# ---------------------------------------------------------------------------
+
+@app.post("/api/calibrate")
+async def api_calibrate(
+    image: UploadFile = File(...),
+    tape_points_json: str = Form(...),     # JSON [{x_px, y_px}, …]
+    tape_spacing_mm: float = Form(100.0),  # real-world spacing between consecutive marks
+    mounting_point_x_px: float = Form(...),
+    mounting_point_y_px: float = Form(...),
+    axis_dx: float = Form(-1.0),
+    axis_dy: float = Form(0.0),
+):
+    """
+    Compute scale + optional 1-D perspective correction from tape marks.
+    Returns a rectified JPEG (or original if < 3 marks) and calibration params.
+    """
+    import traceback
+    try:
+        image_bytes = await image.read()
+        img = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+        if img is None:
+            raise HTTPException(400, "Could not decode image")
+
+        raw_pts = json.loads(tape_points_json)
+        tape_points = [(float(p["x_px"]), float(p["y_px"])) for p in raw_pts]
+        n = len(tape_points)
+        if n < 2:
+            raise HTTPException(400, "Need at least 2 tape marks")
+
+        mpx, mpy = float(mounting_point_x_px), float(mounting_point_y_px)
+        adx, ady = float(axis_dx), float(axis_dy)
+
+        # Scale from mean tape interval
+        u_obs = sorted(
+            (x - mpx) * adx + (y - mpy) * ady for x, y in tape_points
+        )
+        spans_px = [abs(u_obs[i + 1] - u_obs[i]) for i in range(n - 1)]
+        mean_span_px = float(np.mean(spans_px))
+        mm_per_pixel = tape_spacing_mm / mean_span_px
+
+        # Perspective correction when 3+ marks available
+        perspective_corrected = False
+        if n >= 3:
+            from src.calibrator import rectify_image
+            img_out, (mpx, mpy) = rectify_image(img, tape_points, (mpx, mpy), adx, ady)
+            perspective_corrected = True
+        else:
+            img_out = img
+
+        _, buf = cv2.imencode(".jpg", img_out, [cv2.IMWRITE_JPEG_QUALITY, 92])
+        img_b64 = base64.b64encode(buf.tobytes()).decode()
+
+        return {
+            "rectified_image_base64": img_b64,
+            "calibration": {
+                "mm_per_pixel": mm_per_pixel,
+                "mounting_point_x_px": mpx,
+                "ski_centerline_y_px": mpy,
+                "axis_dx": adx,
+                "axis_dy": ady,
+                "perspective_corrected": perspective_corrected,
+            },
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(500, f"{type(e).__name__}: {e}")
 
 
 # ---------------------------------------------------------------------------
