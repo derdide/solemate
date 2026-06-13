@@ -334,7 +334,8 @@ button.btn-sm.active { background: var(--accent); border-color: var(--accent); c
   transition: color 0.2s;
 }
 .step-nav-item.active { color: var(--text); font-weight: 600; }
-.step-nav-item.done   { color: var(--ok); }
+.step-nav-item.done   { color: var(--ok); cursor: pointer; }
+.step-nav-item.done:hover .step-num { background: #16a34a; }
 .step-num {
   display: inline-flex;
   align-items: center;
@@ -528,10 +529,13 @@ button.btn-sm.btn-required { border-color: rgba(59,130,246,0.45); }
 
   .step-layout {
     display: grid;
-    grid-template-columns: 1fr 360px;
+    grid-template-columns: 1fr 468px;
     gap: 1.25rem;
     align-items: start;
   }
+
+  /* Canvas column: must not expand beyond grid cell when canvas is zoomed wider */
+  .step-canvas-col { min-width: 0; }
 
   /* Controls column: sticky so it stays visible while canvas scrolls */
   .step-controls-col {
