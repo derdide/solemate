@@ -315,3 +315,203 @@ button.btn-sm.active { background: var(--accent); border-color: var(--accent); c
   font-size: 0.85rem;
   margin-top: 0.75rem;
 }
+
+/* ── Step progress nav ────────────────────────────────────────────────── */
+.step-nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.55rem 1.5rem;
+  display: flex;
+  align-items: center;
+}
+.step-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.step-nav-item.active { color: var(--text); font-weight: 600; }
+.step-nav-item.done   { color: var(--ok); }
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--border);
+  font-size: 0.72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  transition: background 0.2s, color 0.2s;
+}
+.step-nav-item.active .step-num { background: var(--accent); color: #fff; }
+.step-nav-item.done   .step-num { background: var(--ok);    color: #fff; }
+.step-nav-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 0 0.75rem;
+  flex: 1;
+  min-width: 1.5rem;
+  max-width: 3.5rem;
+}
+
+/* ── Canvas scroll panel ─────────────────────────────────────────────── */
+.canvas-panel {
+  position: relative;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.canvas-panel canvas {
+  display: block;
+  width: 100%;
+  touch-action: none;
+  cursor: crosshair;
+  border-radius: calc(var(--radius) - 1px);
+  border: none !important;
+}
+
+/* ── Drop zone: full-width, extra hint line ──────────────────────────── */
+#drop-zone        { flex: 1 1 100%; }
+#drop-zone .drop-hint {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 0.15rem;
+}
+
+/* ── Calibration guide (numbered step list) ──────────────────────────── */
+.cal-guide {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  line-height: 1.45;
+  margin-top: 0.65rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(15,17,23,0.5);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+.cal-guide-num {
+  color: var(--accent);
+  font-weight: 700;
+  text-align: right;
+  padding-top: 0.05em;
+  white-space: nowrap;
+}
+.cal-guide-opt  { opacity: 0.65; }
+.cal-guide-num.cal-guide-opt { color: var(--text-dim); }
+
+/* ── Required cal buttons: subtle blue tint ──────────────────────────── */
+button.btn-sm.btn-required { border-color: rgba(59,130,246,0.45); }
+
+/* ── Optional label inside buttons ──────────────────────────────────── */
+.btn-opt { opacity: 0.6; font-size: 0.78em; font-style: italic; }
+
+/* ── Mobile overrides ────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Layout spacing */
+  .step-container { padding: 0.75rem; }
+  .card           { padding: 0.9rem 0.85rem; }
+
+  /* Step nav: just circles, no labels */
+  .step-nav       { padding: 0.45rem 1rem; justify-content: center; gap: 0; }
+  .step-label     { display: none; }
+  .step-nav-sep   { max-width: 2rem; margin: 0 0.5rem; }
+
+  /* Upload zone: big tap target */
+  #drop-zone             { padding: 1.5rem 1rem; }
+  #drop-zone .drop-icon  { font-size: 2.4rem; }
+  #drop-zone p           { font-size: 0.9rem; }
+  #drop-zone .drop-hint  { font-size: 0.78rem; }
+
+  /* Canvas panel: fixed height keeps controls reachable */
+  .canvas-panel { max-height: 58vh; }
+
+  /* Mode label: larger text */
+  #cal-mode-label,
+  #holes-mode-label { font-size: 0.9rem; padding: 0.4rem 0.7rem; min-height: 2em; }
+
+  /* Cal guide: tighter on mobile */
+  .cal-guide { font-size: 0.82rem; padding: 0.5rem 0.6rem; }
+
+  /* Cal toolbar step 1: grid layout */
+  #step1 .cal-toolbar  { flex-direction: column; gap: 0.5rem; margin-top: 0.7rem; }
+  #step1 .cal-left {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    width: 100%;
+  }
+  #step1 .cal-left > div:first-child { grid-column: 1 / -1; }
+  #btn-flip { grid-column: 1 / -1; }
+
+  /* Step 2 toolbar: flex-wrap, hide visual separators */
+  #step2 .cal-toolbar { margin-top: 0.5rem; }
+  .toolbar-sep   { display: none; }
+  .toolbar-label { display: none; }
+
+  /* All btn-sm: 44 px tap target */
+  button.btn-sm {
+    min-height: 44px;
+    font-size: 0.9rem;
+    padding: 0.55rem 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Primary action button */
+  button.btn-primary { padding: 0.9rem; font-size: 1rem; min-height: 50px; }
+
+  /* Number inputs: larger */
+  input[type="number"] { font-size: 0.95rem; }
+  #ref-mm { width: 80px; }
+
+  /* Step 2 parameters: stack vertically */
+  .params-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .params-row > div { width: 100%; }
+  .params-row .input-with-unit { display: flex; align-items: center; gap: 0.4rem; }
+  .params-row .input-with-unit input[type="number"] { flex: 1; width: auto !important; }
+  #cat-select { width: 100% !important; }
+
+  /* Overlay controls (step 3): stack, full-width sliders */
+  .overlay-controls-row { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+  .ctrl-group {
+    display: grid;
+    grid-template-columns: 82px 1fr 56px auto;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: normal;
+  }
+  .ctrl-label    { min-width: 0; margin: 0; font-size: 0.85rem; }
+  .ctrl-unit     { font-size: 0.82rem; }
+  input[type="range"] { width: auto; min-width: 0; }
+  #btn-identify  { min-height: 44px; }
+
+  /* Ctrl-group for grid buttons: override back to flex */
+  .ctrl-group:has(.btn-grid-toggle) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  /* Results table: hide secondary columns */
+  .results-table th:nth-child(2),
+  .results-table td:nth-child(2),
+  .results-table th:nth-child(4),
+  .results-table td:nth-child(4),
+  .results-table th:nth-child(6),
+  .results-table td:nth-child(6) { display: none; }
+  .results-table        { font-size: 0.83rem; }
+  .results-table td,
+  .results-table th     { padding: 0.45rem 0.4rem; }
+}

@@ -36,6 +36,10 @@ let _reVisTimer      = null;
 let _gridEnabled   = false;
 let _gridSpacingMm = 10;
 
+// Tap detection state — distinguishes tap from scroll on touch devices
+let _calTapStart   = null;
+let _holesTapStart = null;
+
 
 // ── File pick / drag-drop ────────────────────────────────────────────────
 const dropZone  = document.getElementById('drop-zone');
@@ -189,13 +193,18 @@ function flipAxis() {
   drawCalCanvas();
 }
 
-// Canvas click handler — all coords in canvas natural pixels (= image pixels)
-calCanvas.addEventListener('click', e => {
+// Canvas tap/click handler — pointer events distinguish tap from scroll drag
+calCanvas.addEventListener('pointerdown', e => { _calTapStart = { x: e.clientX, y: e.clientY }; });
+calCanvas.addEventListener('pointercancel', () => { _calTapStart = null; });
+calCanvas.addEventListener('pointerup', e => {
+  if (!_calTapStart) return;
+  const moved = Math.hypot(e.clientX - _calTapStart.x, e.clientY - _calTapStart.y);
+  _calTapStart = null;
+  if (moved >= 10 || !_calMode) return;
+
   const rect = calCanvas.getBoundingClientRect();
   const natX = (e.clientX - rect.left)  * (calCanvas.width  / (rect.width  || 1));
   const natY = (e.clientY - rect.top)   * (calCanvas.height / (rect.height || 1));
-
-  if (!_calMode) return;
 
   if (_calMode === 'tape') {
     _tapePoints.push({ x: natX, y: natY });
@@ -204,10 +213,10 @@ calCanvas.addEventListener('click', e => {
       _calMode = null;
       updateCalButtons();
       document.getElementById('cal-mode-label').textContent =
-        '✓ 4 tape marks set. Now click "② Mount pt".';
+        '✓ 4 tape marks set. Now click "② Mount point".';
     } else {
       document.getElementById('cal-mode-label').textContent =
-        `Mark ${n} set — click next mark${n >= 2 ? ', or switch to another tool' : ''} (${4 - n} more for best correction).`;
+        `Mark ${n} set — tap next mark${n >= 2 ? ', or switch to another tool' : ''} (${4 - n} more for best correction).`;
     }
     _updateCalibrateButton();
 
@@ -222,7 +231,7 @@ calCanvas.addEventListener('click', e => {
   } else if (_calMode === 'trans1') {
     if (!_transL1Start) {
       _transL1Start = { x: natX, y: natY };
-      document.getElementById('cal-mode-label').textContent = 'L1: now click the OPPOSITE ski edge.';
+      document.getElementById('cal-mode-label').textContent = 'L1: now tap the OPPOSITE ski edge.';
     } else {
       _transL1 = { a: _transL1Start, b: { x: natX, y: natY } };
       _transL1Start = null; _calMode = null; updateCalButtons();
@@ -232,11 +241,11 @@ calCanvas.addEventListener('click', e => {
   } else if (_calMode === 'trans2') {
     if (!_transL2Start) {
       _transL2Start = { x: natX, y: natY };
-      document.getElementById('cal-mode-label').textContent = 'L2: now click the OPPOSITE ski edge.';
+      document.getElementById('cal-mode-label').textContent = 'L2: now tap the OPPOSITE ski edge.';
     } else {
       _transL2 = { a: _transL2Start, b: { x: natX, y: natY } };
       _transL2Start = null; _calMode = null; updateCalButtons();
-      document.getElementById('cal-mode-label').textContent = '✓ Centerline from L1 & L2. Click "Calibrate →".';
+      document.getElementById('cal-mode-label').textContent = '✓ Centreline from L1 & L2. Click "Calibrate →".';
     }
   }
   drawCalCanvas();
@@ -418,8 +427,14 @@ function drawHolesCanvas() {
   if (lbl) lbl.textContent = n === 0 ? 'No holes marked' : `${n} hole(s)`;
 }
 
-holesCanvas.addEventListener('click', e => {
-  if (!_rectifiedImageEl) return;
+holesCanvas.addEventListener('pointerdown', e => { _holesTapStart = { x: e.clientX, y: e.clientY }; });
+holesCanvas.addEventListener('pointercancel', () => { _holesTapStart = null; });
+holesCanvas.addEventListener('pointerup', e => {
+  if (!_holesTapStart || !_rectifiedImageEl) return;
+  const moved = Math.hypot(e.clientX - _holesTapStart.x, e.clientY - _holesTapStart.y);
+  _holesTapStart = null;
+  if (moved >= 10) return;
+
   const rect = holesCanvas.getBoundingClientRect();
   const natX = (e.clientX - rect.left)  * (holesCanvas.width  / (rect.width  || 1));
   const natY = (e.clientY - rect.top)   * (holesCanvas.height / (rect.height || 1));
@@ -779,12 +794,22 @@ function setGridSpacing(mm) {
 
 
 // ── Step navigation ──────────────────────────────────────────────────────
+function updateStepNav(n) {
+  for (let i = 1; i <= 3; i++) {
+    const el = document.getElementById('snav-' + i);
+    el.classList.remove('active', 'done');
+    if (i < n)      el.classList.add('done');
+    else if (i === n) el.classList.add('active');
+  }
+}
+
 function showStep(n) {
   document.getElementById('step1').style.display = n === 1 ? '' : 'none';
   document.getElementById('step2').style.display = n === 2 ? '' : 'none';
   document.getElementById('step3').style.display = n === 3 ? '' : 'none';
+  updateStepNav(n);
   if (n === 1) drawCalCanvas();
-  if (n === 2) { drawHolesCanvas(); }
+  if (n === 2) drawHolesCanvas();
 }
 
 
