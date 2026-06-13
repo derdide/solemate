@@ -36,9 +36,22 @@ let _reVisTimer      = null;
 let _gridEnabled   = false;
 let _gridSpacingMm = 10;
 
-// Tap detection state — distinguishes tap from scroll on touch devices
-let _calTapStart   = null;
-let _holesTapStart = null;
+// Zoom levels (1.0 = fit to panel width)
+let _calZoom   = 1.0;
+let _holesZoom = 1.0;
+
+// Active pointer tracking — supports pinch-to-zoom + tap detection
+const _calPtrs  = new Map();
+const _holePtrs = new Map();
+let _pinchCalDist0  = null, _pinchCalZoom0  = null;
+let _pinchHoleDist0 = null, _pinchHoleZoom0 = null;
+
+// Tap start + floating-crosshair preview position (canvas natural px)
+let _calTapStart     = null;
+let _calPreviewPos   = null;
+let _holesTapStart   = null;
+let _holesPreviewPos = null;
+let _previewRafId    = null;
 
 
 // ── File pick / drag-drop ────────────────────────────────────────────────
@@ -143,6 +156,46 @@ function drawCalCanvas() {
     drawDot(midA.x, midA.y, '#ff55ff', 'A');
     drawDot(midB.x, midB.y, '#ff55ff', 'B');
   }
+
+  // Floating crosshair preview (touch or mouse while button held)
+  if (_calPreviewPos && _calMode) {
+    const { x, y } = _calPreviewPos;
+    calCtx.save();
+    calCtx.globalAlpha = 0.72;
+    const r = 10 / _calScale;
+    if (_calMode === 'tape') {
+      calCtx.beginPath();
+      calCtx.arc(x, y, r, 0, Math.PI * 2);
+      calCtx.fillStyle = '#00e5ff';
+      calCtx.fill();
+      calCtx.fillStyle = '#000';
+      calCtx.font = `bold ${13 / _calScale}px sans-serif`;
+      calCtx.fillText(String(_tapePoints.length + 1), x + r + 2 / _calScale, y + 4 / _calScale);
+    } else if (_calMode === 'mp') {
+      const arm = 16 / _calScale;
+      calCtx.strokeStyle = '#ffd700';
+      calCtx.lineWidth = 3 / _calScale;
+      calCtx.lineCap = 'round';
+      calCtx.beginPath(); calCtx.moveTo(x - arm, y); calCtx.lineTo(x + arm, y); calCtx.stroke();
+      calCtx.beginPath(); calCtx.moveTo(x, y - arm); calCtx.lineTo(x, y + arm); calCtx.stroke();
+    } else if (_calMode === 'trans1' || _calMode === 'trans2') {
+      const col = _calMode === 'trans1' ? '#ff55ff' : '#cc44cc';
+      calCtx.beginPath();
+      calCtx.arc(x, y, r, 0, Math.PI * 2);
+      calCtx.fillStyle = col;
+      calCtx.fill();
+      const startPt = _calMode === 'trans1' ? _transL1Start : _transL2Start;
+      if (startPt) {
+        calCtx.beginPath();
+        calCtx.moveTo(startPt.x, startPt.y);
+        calCtx.lineTo(x, y);
+        calCtx.strokeStyle = col;
+        calCtx.lineWidth = 2 / _calScale;
+        calCtx.stroke();
+      }
+    }
+    calCtx.restore();
+  }
 }
 
 function drawDot(x, y, color, label) {
@@ -193,61 +246,119 @@ function flipAxis() {
   drawCalCanvas();
 }
 
-// Canvas tap/click handler — pointer events distinguish tap from scroll drag
-calCanvas.addEventListener('pointerdown', e => { _calTapStart = { x: e.clientX, y: e.clientY }; });
-calCanvas.addEventListener('pointercancel', () => { _calTapStart = null; });
-calCanvas.addEventListener('pointerup', e => {
-  if (!_calTapStart) return;
-  const moved = Math.hypot(e.clientX - _calTapStart.x, e.clientY - _calTapStart.y);
-  _calTapStart = null;
-  if (moved >= 10 || !_calMode) return;
-
+// Canvas pointer handlers — tap detection + pinch zoom + floating crosshair
+function _calNatCoords(e) {
   const rect = calCanvas.getBoundingClientRect();
-  const natX = (e.clientX - rect.left)  * (calCanvas.width  / (rect.width  || 1));
-  const natY = (e.clientY - rect.top)   * (calCanvas.height / (rect.height || 1));
+  const yOff = e.pointerType === 'touch' ? -55 * (calCanvas.height / rect.height) : 0;
+  return {
+    x: (e.clientX - rect.left) * (calCanvas.width  / (rect.width  || 1)),
+    y: (e.clientY - rect.top)  * (calCanvas.height / (rect.height || 1)) + yOff,
+  };
+}
+
+calCanvas.addEventListener('pointerdown', e => {
+  _calPtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (_calPtrs.size === 1) {
+    _calTapStart = { x: e.clientX, y: e.clientY };
+  } else if (_calPtrs.size === 2) {
+    _calTapStart = null; _calPreviewPos = null;
+    const pts = [..._calPtrs.values()];
+    _pinchCalDist0 = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+    _pinchCalZoom0 = _calZoom;
+  }
+});
+
+calCanvas.addEventListener('pointermove', e => {
+  _calPtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (_calPtrs.size >= 2 && _pinchCalDist0 !== null) {
+    const pts = [..._calPtrs.values()];
+    setCalZoom(_pinchCalZoom0 * Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) / _pinchCalDist0);
+    return;
+  }
+  if (_calPtrs.size === 1 && _calTapStart && _calMode) {
+    _calPreviewPos = _calNatCoords(e);
+    if (!_previewRafId) _previewRafId = requestAnimationFrame(() => { _previewRafId = null; drawCalCanvas(); });
+  }
+});
+
+calCanvas.addEventListener('pointerup', e => {
+  const wasSingle = _calPtrs.size === 1 && _calTapStart !== null;
+  const tapStart  = _calTapStart;
+  _calPtrs.delete(e.pointerId);
+  _calPreviewPos = null;
+  if (_calPtrs.size < 2) { _pinchCalDist0 = null; _pinchCalZoom0 = null; }
+  if (_calPtrs.size === 0) _calTapStart = null;
+
+  if (!wasSingle || !tapStart) { drawCalCanvas(); return; }
+  if (Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) >= 10) { drawCalCanvas(); return; }
+  if (!_calMode) { drawCalCanvas(); return; }
+
+  const { x: natX, y: natY } = _calNatCoords(e);
+  const thr = 20 / _calScale;
+  const lbl = document.getElementById('cal-mode-label');
 
   if (_calMode === 'tape') {
-    _tapePoints.push({ x: natX, y: natY });
-    const n = _tapePoints.length;
-    if (n >= 4) {
-      _calMode = null;
-      updateCalButtons();
-      document.getElementById('cal-mode-label').textContent =
-        '✓ 4 tape marks set. Now click "② Mount point".';
+    const idx = _tapePoints.findIndex(p => Math.hypot(p.x - natX, p.y - natY) < thr);
+    if (idx >= 0) {
+      _tapePoints.splice(idx, 1);
+      lbl.textContent = `Mark removed — ${_tapePoints.length} tape mark(s) set.`;
     } else {
-      document.getElementById('cal-mode-label').textContent =
-        `Mark ${n} set — tap next mark${n >= 2 ? ', or switch to another tool' : ''} (${4 - n} more for best correction).`;
+      _tapePoints.push({ x: natX, y: natY });
+      const n = _tapePoints.length;
+      if (n >= 4) {
+        _calMode = null; updateCalButtons();
+        lbl.textContent = '✓ 4 tape marks set. Now click "② Mount point".';
+      } else {
+        lbl.textContent = `Mark ${n} set — tap next${n >= 2 ? ' or switch tool' : ''} (${4 - n} more for best correction).`;
+      }
     }
     _updateCalibrateButton();
 
   } else if (_calMode === 'mp') {
-    _mpPoint = { x: natX, y: natY };
-    _calMode = null;
-    updateCalButtons();
+    if (_mpPoint && Math.hypot(_mpPoint.x - natX, _mpPoint.y - natY) < thr) {
+      _mpPoint = null;
+      lbl.textContent = 'Mount point removed — tap to set it again.';
+    } else {
+      _mpPoint = { x: natX, y: natY };
+      _calMode = null; updateCalButtons();
+      lbl.textContent = '✓ Mounting point set. Click "Calibrate →", or set axis lines ③④.';
+    }
     _updateCalibrateButton();
-    document.getElementById('cal-mode-label').textContent =
-      '✓ Mounting point set. Click "Calibrate →", or set axis lines ③④ for better accuracy.';
 
   } else if (_calMode === 'trans1') {
     if (!_transL1Start) {
-      _transL1Start = { x: natX, y: natY };
-      document.getElementById('cal-mode-label').textContent = 'L1: now tap the OPPOSITE ski edge.';
+      if (_transL1 && (Math.hypot(_transL1.a.x - natX, _transL1.a.y - natY) < thr ||
+                       Math.hypot(_transL1.b.x - natX, _transL1.b.y - natY) < thr)) {
+        _transL1 = null; lbl.textContent = 'L1 removed — tap one ski edge to start again.';
+      } else {
+        _transL1Start = { x: natX, y: natY }; lbl.textContent = 'L1: now tap the OPPOSITE ski edge.';
+      }
     } else {
       _transL1 = { a: _transL1Start, b: { x: natX, y: natY } };
       _transL1Start = null; _calMode = null; updateCalButtons();
-      document.getElementById('cal-mode-label').textContent = '✓ L1 set. Now click "④ Axis L2" (tip side).';
+      lbl.textContent = '✓ L1 set. Now click "④ Axis L2" (tip side).';
     }
 
   } else if (_calMode === 'trans2') {
     if (!_transL2Start) {
-      _transL2Start = { x: natX, y: natY };
-      document.getElementById('cal-mode-label').textContent = 'L2: now tap the OPPOSITE ski edge.';
+      if (_transL2 && (Math.hypot(_transL2.a.x - natX, _transL2.a.y - natY) < thr ||
+                       Math.hypot(_transL2.b.x - natX, _transL2.b.y - natY) < thr)) {
+        _transL2 = null; lbl.textContent = 'L2 removed — tap one ski edge to start again.';
+      } else {
+        _transL2Start = { x: natX, y: natY }; lbl.textContent = 'L2: now tap the OPPOSITE ski edge.';
+      }
     } else {
       _transL2 = { a: _transL2Start, b: { x: natX, y: natY } };
       _transL2Start = null; _calMode = null; updateCalButtons();
-      document.getElementById('cal-mode-label').textContent = '✓ Centreline from L1 & L2. Click "Calibrate →".';
+      lbl.textContent = '✓ Centreline from L1 & L2. Click "Calibrate →".';
     }
   }
+  drawCalCanvas();
+});
+
+calCanvas.addEventListener('pointercancel', e => {
+  _calPtrs.delete(e.pointerId); _calTapStart = null; _calPreviewPos = null;
+  if (_calPtrs.size < 2) { _pinchCalDist0 = null; _pinchCalZoom0 = null; }
   drawCalCanvas();
 });
 
@@ -317,7 +428,10 @@ function _computeAxisAndMount() {
   return { axisDx, axisDy, mpX, mpY };
 }
 
-window.addEventListener('resize', () => { if (_imageEl) drawCalCanvas(); });
+window.addEventListener('resize', () => {
+  if (_imageEl)           { _calZoom = 1.0; calCanvas.style.width = '';   drawCalCanvas();   _updateZoomLabel('cal-zoom-label', 1.0); }
+  if (_rectifiedImageEl)  { _holesZoom = 1.0; holesCanvas.style.width = ''; drawHolesCanvas(); _updateZoomLabel('holes-zoom-label', 1.0); }
+});
 
 
 // ── Step 1: Calibrate action ─────────────────────────────────────────────
@@ -421,33 +535,93 @@ function drawHolesCanvas() {
     holesCtx.stroke();
   });
 
+  // Floating crosshair preview for holes
+  if (_holesPreviewPos) {
+    const { x, y } = _holesPreviewPos;
+    const r = Math.max(15 / _holesScale, 12);
+    holesCtx.save();
+    holesCtx.globalAlpha = 0.65;
+    holesCtx.beginPath();
+    holesCtx.arc(x, y, r, 0, Math.PI * 2);
+    holesCtx.strokeStyle = 'rgba(50,255,100,0.9)';
+    holesCtx.lineWidth = 3 / _holesScale;
+    holesCtx.setLineDash([4 / _holesScale, 4 / _holesScale]);
+    holesCtx.stroke();
+    holesCtx.setLineDash([]);
+    const arm = r * 0.6;
+    holesCtx.strokeStyle = 'rgba(50,255,100,0.9)';
+    holesCtx.lineWidth = 2 / _holesScale;
+    holesCtx.beginPath(); holesCtx.moveTo(x - arm, y); holesCtx.lineTo(x + arm, y); holesCtx.stroke();
+    holesCtx.beginPath(); holesCtx.moveTo(x, y - arm); holesCtx.lineTo(x, y + arm); holesCtx.stroke();
+    holesCtx.restore();
+  }
+
   // Count label
   const n = (_editedHoles || []).length;
   const lbl = document.getElementById('holes-count-label');
   if (lbl) lbl.textContent = n === 0 ? 'No holes marked' : `${n} hole(s)`;
 }
 
-holesCanvas.addEventListener('pointerdown', e => { _holesTapStart = { x: e.clientX, y: e.clientY }; });
-holesCanvas.addEventListener('pointercancel', () => { _holesTapStart = null; });
-holesCanvas.addEventListener('pointerup', e => {
-  if (!_holesTapStart || !_rectifiedImageEl) return;
-  const moved = Math.hypot(e.clientX - _holesTapStart.x, e.clientY - _holesTapStart.y);
-  _holesTapStart = null;
-  if (moved >= 10) return;
-
+function _holeNatCoords(e) {
   const rect = holesCanvas.getBoundingClientRect();
-  const natX = (e.clientX - rect.left)  * (holesCanvas.width  / (rect.width  || 1));
-  const natY = (e.clientY - rect.top)   * (holesCanvas.height / (rect.height || 1));
+  const yOff = e.pointerType === 'touch' ? -55 * (holesCanvas.height / rect.height) : 0;
+  return {
+    x: (e.clientX - rect.left) * (holesCanvas.width  / (rect.width  || 1)),
+    y: (e.clientY - rect.top)  * (holesCanvas.height / (rect.height || 1)) + yOff,
+  };
+}
 
+holesCanvas.addEventListener('pointerdown', e => {
+  _holePtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (_holePtrs.size === 1) {
+    _holesTapStart = { x: e.clientX, y: e.clientY };
+  } else if (_holePtrs.size === 2) {
+    _holesTapStart = null; _holesPreviewPos = null;
+    const pts = [..._holePtrs.values()];
+    _pinchHoleDist0 = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+    _pinchHoleZoom0 = _holesZoom;
+  }
+});
+
+holesCanvas.addEventListener('pointermove', e => {
+  _holePtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (_holePtrs.size >= 2 && _pinchHoleDist0 !== null) {
+    const pts = [..._holePtrs.values()];
+    setHolesZoom(_pinchHoleZoom0 * Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) / _pinchHoleDist0);
+    return;
+  }
+  if (_holePtrs.size === 1 && _holesTapStart && _rectifiedImageEl) {
+    _holesPreviewPos = _holeNatCoords(e);
+    if (!_previewRafId) _previewRafId = requestAnimationFrame(() => { _previewRafId = null; drawHolesCanvas(); });
+  }
+});
+
+holesCanvas.addEventListener('pointerup', e => {
+  const wasSingle = _holePtrs.size === 1 && _holesTapStart !== null;
+  const tapStart  = _holesTapStart;
+  _holePtrs.delete(e.pointerId);
+  _holesPreviewPos = null;
+  if (_holePtrs.size < 2) { _pinchHoleDist0 = null; _pinchHoleZoom0 = null; }
+  if (_holePtrs.size === 0) _holesTapStart = null;
+
+  if (!wasSingle || !tapStart || !_rectifiedImageEl) { drawHolesCanvas(); return; }
+  if (Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) >= 10) { drawHolesCanvas(); return; }
+
+  const { x: natX, y: natY } = _holeNatCoords(e);
   if (_editedHoles === null) _editedHoles = [];
   const threshold = 20 / _holesScale;
   const idx = _editedHoles.findIndex(h => Math.hypot(h.x_px - natX, h.y_px - natY) < threshold);
-
   if (idx >= 0) {
     _editedHoles.splice(idx, 1);
   } else {
     _editedHoles.push({ x_px: Math.round(natX), y_px: Math.round(natY), radius_px: 5, confidence: 1.0, source: 'manual' });
   }
+  drawHolesCanvas();
+});
+
+holesCanvas.addEventListener('pointercancel', e => {
+  _holePtrs.delete(e.pointerId); _holesTapStart = null; _holesPreviewPos = null;
+  if (_holePtrs.size < 2) { _pinchHoleDist0 = null; _pinchHoleZoom0 = null; }
   drawHolesCanvas();
 });
 
@@ -467,7 +641,7 @@ function backToCalibration() {
   showStep(1);
 }
 
-window.addEventListener('resize', () => { if (_rectifiedImageEl) drawHolesCanvas(); }, { passive: true });
+// (resize handled above)
 
 
 // ── Step 2: Analyze action ───────────────────────────────────────────────
@@ -791,6 +965,53 @@ function setGridSpacing(mm) {
   drawHolesCanvas();
   _drawOverlayCanvas();
 }
+
+
+// ── Zoom ─────────────────────────────────────────────────────────────────
+function _updateZoomLabel(id, zoom) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = Math.round(zoom * 100) + '%';
+}
+
+function setCalZoom(level) {
+  const baseW = _calZoom > 1.0 ? parseFloat(calCanvas.style.width) / _calZoom : calCanvas.offsetWidth;
+  _calZoom = Math.max(1.0, Math.min(8.0, level));
+  calCanvas.style.width = _calZoom > 1.0 ? (baseW * _calZoom) + 'px' : '';
+  _updateZoomLabel('cal-zoom-label', _calZoom);
+  if (_imageEl) drawCalCanvas();
+}
+
+function setHolesZoom(level) {
+  const baseW = _holesZoom > 1.0 ? parseFloat(holesCanvas.style.width) / _holesZoom : holesCanvas.offsetWidth;
+  _holesZoom = Math.max(1.0, Math.min(8.0, level));
+  holesCanvas.style.width = _holesZoom > 1.0 ? (baseW * _holesZoom) + 'px' : '';
+  _updateZoomLabel('holes-zoom-label', _holesZoom);
+  if (_rectifiedImageEl) drawHolesCanvas();
+}
+
+function adjustZoom(which, dir) {
+  const factor = dir > 0 ? 1.3 : 1 / 1.3;
+  if (which === 'cal') setCalZoom(_calZoom * factor);
+  else setHolesZoom(_holesZoom * factor);
+}
+
+function resetZoom(which) {
+  if (which === 'cal') setCalZoom(1.0);
+  else setHolesZoom(1.0);
+}
+
+// Wheel zoom on canvas panels
+document.getElementById('cal-panel').addEventListener('wheel', e => {
+  if (!_imageEl) return;
+  e.preventDefault();
+  setCalZoom(_calZoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+}, { passive: false });
+
+document.getElementById('holes-panel').addEventListener('wheel', e => {
+  if (!_rectifiedImageEl) return;
+  e.preventDefault();
+  setHolesZoom(_holesZoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15));
+}, { passive: false });
 
 
 // ── Step navigation ──────────────────────────────────────────────────────

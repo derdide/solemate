@@ -8,12 +8,10 @@
 </head>
 <body>
 
-<!-- ── App header ──────────────────────────────────────────────────── -->
 <header class="app-header">
   <h1>🎿 Ski Binding Conflict Detector</h1>
 </header>
 
-<!-- ── Step progress nav ──────────────────────────────────────────── -->
 <nav class="step-nav" id="step-nav">
   <div class="step-nav-item active" id="snav-1">
     <span class="step-num">1</span>
@@ -31,235 +29,238 @@
   </div>
 </nav>
 
-<!-- ── Global loading indicator ───────────────────────────────────── -->
-<div id="loading">
-  <div class="spinner"></div>
-  <p id="loading-msg">Working…</p>
-</div>
-
-<!-- ── Global error banner ─────────────────────────────────────────── -->
-<div id="error-notice" style="max-width:1100px;margin:0 auto;padding:0 1.5rem"></div>
+<div id="loading"><div class="spinner"></div><p id="loading-msg">Working…</p></div>
+<div id="error-notice" style="max-width:1200px;margin:0 auto;padding:0 1.5rem"></div>
 
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     STEP 1  —  Photo & Calibration
-     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══ STEP 1 — Photo & Calibration ═══════════════════════════════════ -->
 <div id="step1" class="step-container">
+  <div class="step-layout">
 
-  <!-- Upload strip -->
-  <div class="card settings-strip">
-    <div class="settings-row">
-      <div id="drop-zone" onclick="document.getElementById('file-input').click()">
-        <div class="drop-icon">📷</div>
-        <p id="drop-label">Tap or click to upload a photo</p>
-        <p class="drop-hint">Ski laid flat · measuring tape alongside · good light</p>
-        <input type="file" id="file-input" accept="image/*" style="display:none" />
+    <!-- ── Canvas column ── -->
+    <div class="step-canvas-col">
+      <div class="canvas-panel" id="cal-panel">
+        <canvas id="cal-canvas"></canvas>
       </div>
+      <div class="zoom-bar">
+        <button class="btn-sm zoom-btn" onclick="adjustZoom('cal',-1)" title="Zoom out">−</button>
+        <span class="zoom-label" id="cal-zoom-label">100%</span>
+        <button class="btn-sm zoom-btn" onclick="adjustZoom('cal',1)" title="Zoom in">+</button>
+        <button class="btn-sm zoom-btn" onclick="resetZoom('cal')" title="Fit to window">⤢</button>
+        <span class="zoom-hint">Scroll to zoom · drag to pan</span>
+      </div>
+      <div id="cal-mode-label" class="mode-label"></div>
+      <div id="cal-status" class="cal-status-line"></div>
     </div>
-  </div>
 
-  <!-- Calibration canvas card -->
-  <div class="card" style="margin-top:1rem" id="cal-card">
-
-    <div class="canvas-panel">
-      <canvas id="cal-canvas"></canvas>
-    </div>
-
-    <div id="cal-mode-label" style="font-size:0.82rem;color:var(--accent);min-height:1.4em;margin-top:0.5rem;padding:0.25rem 0.5rem;background:rgba(15,17,23,0.6);border-radius:4px"></div>
-
-    <div class="cal-toolbar">
-      <div class="cal-left">
-        <div style="display:flex;align-items:center;gap:0.4rem">
-          <label style="margin:0;white-space:nowrap;font-size:0.8rem">Mark spacing:</label>
-          <input type="number" id="ref-mm" value="100" min="10" max="500" step="10" style="width:68px" />
-          <span style="font-size:0.75rem;color:var(--text-dim)">mm</span>
+    <!-- ── Controls column ── -->
+    <div class="step-controls-col">
+      <div class="card settings-strip">
+        <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <div class="drop-icon">📷</div>
+          <p id="drop-label">Tap or click to upload a photo</p>
+          <p class="drop-hint">Ski laid flat · measuring tape alongside · good light</p>
+          <input type="file" id="file-input" accept="image/*" style="display:none" />
         </div>
-        <button class="btn-sm btn-required" id="btn-tape"   onclick="startCalMode('tape')"  >① Tape marks</button>
-        <button class="btn-sm btn-required" id="btn-mp"     onclick="startCalMode('mp')"    >② Mount point</button>
-        <button class="btn-sm"              id="btn-trans1" onclick="startCalMode('trans1')">③ Axis L1 <span class="btn-opt">(opt)</span></button>
-        <button class="btn-sm"              id="btn-trans2" onclick="startCalMode('trans2')">④ Axis L2 <span class="btn-opt">(opt)</span></button>
-        <button class="btn-sm"              id="btn-flip"   onclick="flipAxis()"            >↩ Flip axis</button>
       </div>
-      <div class="cal-right">
-        <div class="cal-ok"     id="cal-ok"     style="display:none"></div>
-        <div class="cal-notice" id="cal-notice" style="display:none"></div>
+
+      <div class="card" style="margin-top:0.75rem">
+        <div class="cal-toolbar">
+          <div class="cal-left">
+            <div style="display:flex;align-items:center;gap:0.4rem">
+              <label style="margin:0;white-space:nowrap;font-size:0.8rem">Mark spacing:</label>
+              <input type="number" id="ref-mm" value="100" min="10" max="500" step="10" style="width:68px" />
+              <span style="font-size:0.75rem;color:var(--text-dim)">mm</span>
+            </div>
+            <button class="btn-sm btn-required" id="btn-tape"   onclick="startCalMode('tape')"  >① Tape marks</button>
+            <button class="btn-sm btn-required" id="btn-mp"     onclick="startCalMode('mp')"    >② Mount point</button>
+            <button class="btn-sm"              id="btn-trans1" onclick="startCalMode('trans1')">③ Axis L1 <span class="btn-opt">(opt)</span></button>
+            <button class="btn-sm"              id="btn-trans2" onclick="startCalMode('trans2')">④ Axis L2 <span class="btn-opt">(opt)</span></button>
+            <button class="btn-sm"              id="btn-flip"   onclick="flipAxis()"            >↩ Flip axis</button>
+          </div>
+        </div>
+
+        <div class="cal-guide">
+          <span class="cal-guide-num">①</span>
+          <span>Click 2–4 tape marks at equal spacing, <strong>heel → tip</strong>. Set spacing above. 3+ marks enables parallax correction. Tap existing mark to remove.</span>
+          <span class="cal-guide-num">②</span>
+          <span>Click the ski's <strong>centre mount mark</strong> — the half-sole reference line. Tap to remove and re-place.</span>
+          <span class="cal-guide-num cal-guide-opt">③④</span>
+          <span class="cal-guide-opt">Optional — edge→edge at heel zone, then tip zone, for a more precise axis.</span>
+          <span class="cal-guide-num cal-guide-opt">↩</span>
+          <span class="cal-guide-opt">Orange arrow should point toward the tip.</span>
+        </div>
+
+        <div id="cal-ok"     class="cal-ok"     style="display:none;margin-top:0.75rem"></div>
+        <div id="cal-notice" class="cal-notice" style="display:none;margin-top:0.75rem"></div>
+
+        <button class="btn-primary" id="calibrate-btn" onclick="doCalibrate()" disabled>
+          Calibrate →
+        </button>
       </div>
     </div>
 
-    <div class="cal-guide">
-      <span class="cal-guide-num">①</span>
-      <span>Click 2–4 tape marks at equal spacing, <strong>heel → tip</strong>. Set spacing above (default 100 mm). 3+ marks enables parallax correction.</span>
-      <span class="cal-guide-num">②</span>
-      <span>Click the ski's <strong>centre mount mark</strong> — the half-sole reference line printed on the ski.</span>
-      <span class="cal-guide-num cal-guide-opt">③④</span>
-      <span class="cal-guide-opt">Optional — click edge→edge at the heel zone, then at the tip zone, for a more precise ski axis.</span>
-      <span class="cal-guide-num cal-guide-opt">↩</span>
-      <span class="cal-guide-opt">The orange arrow should point toward the tip — click Flip axis if it points the wrong way.</span>
-    </div>
-
-    <div id="cal-status" style="font-size:0.8rem;color:var(--text-dim);margin-top:0.4rem;min-height:1em"></div>
-
-    <button class="btn-primary" id="calibrate-btn" onclick="doCalibrate()" disabled>
-      Calibrate →
-    </button>
-
-  </div><!-- /cal-card -->
-
+  </div>
 </div><!-- /step1 -->
 
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     STEP 2  —  Holes & Parameters
-     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══ STEP 2 — Mark holes ════════════════════════════════════════════ -->
 <div id="step2" class="step-container" style="display:none">
+  <div class="step-layout">
 
-  <!-- Header strip -->
-  <div class="card settings-strip" style="margin-bottom:1rem">
-    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-      <span id="cal-summary" style="font-size:0.85rem;color:var(--text-dim)"></span>
-      <button class="btn-sm" onclick="backToCalibration()">← Back to calibration</button>
-    </div>
-  </div>
-
-  <!-- Holes canvas -->
-  <div class="card" style="margin-bottom:1rem">
-    <div class="canvas-panel">
-      <canvas id="holes-canvas"></canvas>
-    </div>
-    <div id="holes-mode-label" style="font-size:0.82rem;color:var(--accent);min-height:1.4em;margin-top:0.5rem;padding:0.25rem 0.5rem;background:rgba(15,17,23,0.6);border-radius:4px">
-      Tap on the image to mark each existing drill hole · tap an existing circle to remove it
-    </div>
-    <div class="cal-toolbar" style="margin-top:0.6rem">
-      <div class="cal-left" style="flex-wrap:wrap;gap:0.45rem">
-        <button class="btn-sm" disabled style="opacity:0.4;cursor:not-allowed" title="Coming soon">🔍 Auto-detect</button>
-        <button class="btn-sm" onclick="clearAllHoles()">🗑 Clear all</button>
-        <span id="holes-count-label" style="font-size:0.78rem;color:var(--text-dim);align-self:center"></span>
-        <span class="toolbar-sep" style="border-left:1px solid var(--border);height:1.2em;align-self:center;margin:0 0.2rem"></span>
-        <label class="toolbar-label" style="margin:0;font-size:0.8rem;color:var(--text-dim);align-self:center">Grid:</label>
-        <button class="btn-sm btn-grid-toggle" onclick="toggleGrid()">Grid off</button>
-        <button class="btn-sm btn-grid-1cm active" onclick="setGridSpacing(10)">1 cm</button>
-        <button class="btn-sm btn-grid-5mm" onclick="setGridSpacing(5)">½ cm</button>
+    <!-- ── Canvas column ── -->
+    <div class="step-canvas-col">
+      <div class="canvas-panel" id="holes-panel">
+        <canvas id="holes-canvas"></canvas>
+      </div>
+      <div class="zoom-bar">
+        <button class="btn-sm zoom-btn" onclick="adjustZoom('holes',-1)" title="Zoom out">−</button>
+        <span class="zoom-label" id="holes-zoom-label">100%</span>
+        <button class="btn-sm zoom-btn" onclick="adjustZoom('holes',1)" title="Zoom in">+</button>
+        <button class="btn-sm zoom-btn" onclick="resetZoom('holes')" title="Fit to window">⤢</button>
+        <span class="zoom-hint">Scroll to zoom · drag to pan</span>
+      </div>
+      <div id="holes-mode-label" class="mode-label">
+        Tap on the image to mark each existing drill hole · tap an existing circle to remove it
       </div>
     </div>
-  </div>
 
-  <!-- Parameters + Analyze -->
-  <div class="card">
-    <div class="settings-row params-row" style="align-items:flex-end;flex-wrap:wrap;gap:1rem">
-      <div>
-        <label for="bsl-input">Boot sole length</label>
-        <div class="input-with-unit">
-          <input type="number" id="bsl-input" value="310" min="240" max="400" step="5" style="width:88px" />
-          <span style="font-size:0.75rem;color:var(--text-dim)">mm</span>
+    <!-- ── Controls column ── -->
+    <div class="step-controls-col">
+      <div class="card settings-strip">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+          <span id="cal-summary" style="font-size:0.85rem;color:var(--text-dim)"></span>
+          <button class="btn-sm" onclick="backToCalibration()">← Back to calibration</button>
         </div>
       </div>
-      <div>
-        <label for="cat-select">Binding category</label>
-        <select id="cat-select" style="width:140px">
-          <option value="all">All</option>
-          <option value="alpine">Alpine</option>
-          <option value="lt">Touring</option>
-        </select>
-      </div>
-      <div>
-        <label for="sep-input">Min hole separation</label>
-        <div class="input-with-unit">
-          <input type="number" id="sep-input" value="14" min="8" max="25" step="0.5" style="width:68px" />
-          <span style="font-size:0.75rem;color:var(--text-dim)">mm</span>
+
+      <div class="card" style="margin-top:0.75rem">
+        <div class="cal-toolbar">
+          <div class="cal-left" style="flex-wrap:wrap;gap:0.45rem">
+            <button class="btn-sm" disabled style="opacity:0.4;cursor:not-allowed" title="Coming soon">🔍 Auto-detect</button>
+            <button class="btn-sm" onclick="clearAllHoles()">🗑 Clear all</button>
+            <span id="holes-count-label" style="font-size:0.78rem;color:var(--text-dim);align-self:center"></span>
+            <span class="toolbar-sep" style="border-left:1px solid var(--border);height:1.2em;align-self:center;margin:0 0.2rem"></span>
+            <label class="toolbar-label" style="margin:0;font-size:0.8rem;color:var(--text-dim);align-self:center">Grid:</label>
+            <button class="btn-sm btn-grid-toggle" onclick="toggleGrid()">Grid off</button>
+            <button class="btn-sm btn-grid-1cm active" onclick="setGridSpacing(10)">1 cm</button>
+            <button class="btn-sm btn-grid-5mm" onclick="setGridSpacing(5)">½ cm</button>
+          </div>
         </div>
       </div>
-    </div>
-    <button class="btn-primary" id="analyze-btn" onclick="doAnalyze()">
-      Analyze →
-    </button>
-  </div>
 
+      <div class="card" style="margin-top:0.75rem">
+        <div class="settings-row params-row" style="align-items:flex-end;flex-wrap:wrap;gap:1rem">
+          <div>
+            <label for="bsl-input">Boot sole length</label>
+            <div class="input-with-unit">
+              <input type="number" id="bsl-input" value="310" min="240" max="400" step="5" style="width:88px" />
+              <span style="font-size:0.75rem;color:var(--text-dim)">mm</span>
+            </div>
+          </div>
+          <div>
+            <label for="cat-select">Binding category</label>
+            <select id="cat-select" style="width:140px">
+              <option value="all">All</option>
+              <option value="alpine">Alpine</option>
+              <option value="lt">Touring</option>
+            </select>
+          </div>
+          <div>
+            <label for="sep-input">Min hole separation</label>
+            <div class="input-with-unit">
+              <input type="number" id="sep-input" value="14" min="8" max="25" step="0.5" style="width:68px" />
+              <span style="font-size:0.75rem;color:var(--text-dim)">mm</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-primary" id="analyze-btn" onclick="doAnalyze()">
+          Analyze →
+        </button>
+      </div>
+    </div>
+
+  </div>
 </div><!-- /step2 -->
 
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     STEP 3  —  Results · Overlay · Binding table
-     ═══════════════════════════════════════════════════════════════ -->
+<!-- ═══ STEP 3 — Results ════════════════════════════════════════════════ -->
 <div id="step3" class="step-container" style="display:none">
+  <div class="step-layout">
 
-  <!-- Overlay controls card -->
-  <div class="card overlay-controls-card" id="overlay-controls-card" style="margin-bottom:1rem;display:none">
-    <div class="overlay-controls-row">
-
-      <div class="ctrl-group">
-        <label class="ctrl-label">BSL</label>
-        <input type="range" id="ctrl-bsl" min="240" max="400" step="1">
-        <input type="number" id="ctrl-bsl-num" min="240" max="400" step="1" style="width:64px">
-        <span class="ctrl-unit">mm</span>
+    <!-- ── Image column ── -->
+    <div class="step-canvas-col">
+      <div id="overlay-img-container" style="position:relative;display:none">
+        <img id="overlay-img" src="" alt="overlay" style="width:100%;border-radius:6px;border:1px solid var(--border);display:block" />
+        <canvas id="overlay-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:6px"></canvas>
       </div>
-
-      <div class="ctrl-group" id="ctrl-heel-group" style="display:none">
-        <label class="ctrl-label">Heel offset</label>
-        <input type="range" id="ctrl-heel" min="-20" max="20" step="0.5">
-        <input type="number" id="ctrl-heel-num" min="-20" max="20" step="0.5" style="width:64px">
-        <span class="ctrl-unit">mm</span>
-      </div>
-
-      <div class="ctrl-group">
-        <label class="ctrl-label">Mount offset</label>
-        <input type="range" id="ctrl-mount" min="-30" max="30" step="0.5">
-        <input type="number" id="ctrl-mount-num" min="-30" max="30" step="0.5" style="width:64px">
-        <span class="ctrl-unit">mm</span>
-      </div>
-
-      <div class="ctrl-group">
-        <label class="ctrl-label">Grid</label>
-        <button class="btn-sm btn-grid-toggle" onclick="toggleGrid()">Grid off</button>
-        <button class="btn-sm btn-grid-1cm active" onclick="setGridSpacing(10)">1 cm</button>
-        <button class="btn-sm btn-grid-5mm" onclick="setGridSpacing(5)">½ cm</button>
-      </div>
-
-      <button class="btn-sm" id="btn-identify" disabled title="Coming soon" style="opacity:0.5;align-self:center">
-        🔍 Identify binding
-      </button>
-
+      <canvas id="preview-canvas" style="width:100%;border-radius:6px;border:1px solid var(--border);display:none"></canvas>
+      <p class="img-caption" id="hole-count"></p>
     </div>
+
+    <!-- ── Controls column ── -->
+    <div class="step-controls-col">
+      <div class="card settings-strip" style="margin-bottom:0.75rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+          <span id="img-binding-label" style="font-size:0.85rem;color:var(--text-dim)">Select a binding below</span>
+          <button class="btn-sm" onclick="showStep(2)">← Edit holes</button>
+        </div>
+      </div>
+
+      <div class="card overlay-controls-card" id="overlay-controls-card" style="display:none;margin-bottom:0.75rem">
+        <div class="overlay-controls-row">
+          <div class="ctrl-group">
+            <label class="ctrl-label">BSL</label>
+            <input type="range" id="ctrl-bsl" min="240" max="400" step="1">
+            <input type="number" id="ctrl-bsl-num" min="240" max="400" step="1" style="width:64px">
+            <span class="ctrl-unit">mm</span>
+          </div>
+          <div class="ctrl-group" id="ctrl-heel-group" style="display:none">
+            <label class="ctrl-label">Heel offset</label>
+            <input type="range" id="ctrl-heel" min="-20" max="20" step="0.5">
+            <input type="number" id="ctrl-heel-num" min="-20" max="20" step="0.5" style="width:64px">
+            <span class="ctrl-unit">mm</span>
+          </div>
+          <div class="ctrl-group">
+            <label class="ctrl-label">Mount offset</label>
+            <input type="range" id="ctrl-mount" min="-30" max="30" step="0.5">
+            <input type="number" id="ctrl-mount-num" min="-30" max="30" step="0.5" style="width:64px">
+            <span class="ctrl-unit">mm</span>
+          </div>
+          <div class="ctrl-group">
+            <label class="ctrl-label">Grid</label>
+            <button class="btn-sm btn-grid-toggle" onclick="toggleGrid()">Grid off</button>
+            <button class="btn-sm btn-grid-1cm active" onclick="setGridSpacing(10)">1 cm</button>
+            <button class="btn-sm btn-grid-5mm" onclick="setGridSpacing(5)">½ cm</button>
+          </div>
+          <button class="btn-sm" id="btn-identify" disabled title="Coming soon" style="opacity:0.5;align-self:center">
+            🔍 Identify binding
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="results-table-card" style="display:none">
+        <h2>Compatible bindings — tap any row to view overlay</h2>
+        <div style="overflow-x:auto">
+          <table class="results-table" id="results-table">
+            <thead>
+              <tr>
+                <th>Binding</th>
+                <th>BSL (mm)</th>
+                <th>New holes</th>
+                <th>Reusable</th>
+                <th>Conflicts</th>
+                <th>Heel offset</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="results-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </div>
-
-  <!-- Result image card -->
-  <div class="card" style="margin-bottom:1rem">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
-      <h2 style="margin:0">Result image
-        <span id="img-binding-label" style="font-weight:400;font-size:0.85rem;color:var(--text-dim)"></span>
-      </h2>
-      <button class="btn-sm" onclick="showStep(2)">← Edit holes / parameters</button>
-    </div>
-
-    <div id="overlay-img-container" style="position:relative;display:none">
-      <img id="overlay-img" src="" alt="overlay" style="width:100%;border-radius:6px;border:1px solid var(--border);display:block" />
-      <canvas id="overlay-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:6px"></canvas>
-    </div>
-    <canvas id="preview-canvas" style="width:100%;border-radius:6px;border:1px solid var(--border);display:none"></canvas>
-
-    <p class="img-caption" id="hole-count"></p>
-  </div>
-
-  <!-- Compatible bindings table -->
-  <div class="card" id="results-table-card" style="display:none">
-    <h2>Compatible bindings — tap any row to view overlay</h2>
-    <div style="overflow-x:auto">
-      <table class="results-table" id="results-table">
-        <thead>
-          <tr>
-            <th>Binding</th>
-            <th>BSL (mm)</th>
-            <th>New holes</th>
-            <th>Reusable</th>
-            <th>Conflicts</th>
-            <th>Heel offset</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="results-body"></tbody>
-      </table>
-    </div>
-  </div>
-
 </div><!-- /step3 -->
 
 <script src="/static/app.js"></script>
