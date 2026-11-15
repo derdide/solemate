@@ -7,30 +7,27 @@ services:
       #   - "127.0.0.1:8000:8000"
       # so the app is only reachable through the proxy.
       - "8000:8000"
-    environment:
-      # Optional request limits (defaults shown) — see README "Hosting it safely"
-      - MAX_UPLOAD_MB=${MAX_UPLOAD_MB:-25}
-      - MAX_IMAGE_MEGAPIXELS=${MAX_IMAGE_MEGAPIXELS:-50}
     volumes:
       # Mount templates directory so you can update binding_db.json without rebuilding
-      # (restart the container to reload it)
-      - ./templates:/app/templates:ro
-    # --- Containment: the app parses untrusted images, so give it as little as possible ---
-    read_only: true                 # immutable root filesystem
+      - ./templates:/srv/templates:ro
+    # --- Containment: it only serves files, so it gets nothing else ---
+    read_only: true
     tmpfs:
-      - /tmp:size=128m,mode=1777    # upload spool lives in RAM, not on the host disk
+      - /tmp:size=8m
+    environment:
+      - XDG_DATA_HOME=/tmp
+      - XDG_CONFIG_HOME=/tmp
     cap_drop:
       - ALL
     security_opt:
       - no-new-privileges:true
-    mem_limit: 2g                   # a runaway request kills this container, not the host
-    memswap_limit: 2g
-    pids_limit: 128
-    cpus: 2
+    mem_limit: 128m
+    memswap_limit: 128m
+    pids_limit: 64
+    cpus: 1
     restart: unless-stopped
     healthcheck:
-      # python:slim ships no curl, so the previous curl-based check could never pass
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8000/api/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3

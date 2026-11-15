@@ -1,20 +1,7 @@
-# Keep secrets, VCS history and local clutter out of the build context / image layers
-.git
-.gitignore
-.env
-.env.*
-.claude/
-.venv/
-venv/
-env/
-__pycache__/
-*.py[cod]
-.vscode/
-.idea/
-.DS_Store
-tests/
-README.md
-RESUME.md
-docker-compose.yml
-Dockerfile
-.dockerignore
+# The image copies index.html, static/ and templates/ explicitly; keep everything
+# else (secrets, VCS history, local clutter) out of the build context.
+*
+!Caddyfile
+!index.html
+!static
+!templates
