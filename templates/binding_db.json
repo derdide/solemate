@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "description": "Ski binding hole templates. All coordinates in mm relative to mounting point. X+ toward tip, Y+ lateral right.",
+  "description": "Ski binding hole templates, in mm. Hole x grows toward the TAIL (drill-template convention), y toward the skier's right. For mounting_reference 'half_bsl', front_unit x is measured from the boot tip and heel_unit x from the boot heel; for 'fixed' (rental/demo plates) both are measured from the mount point. heel_unit.adjustment_range_mm is how far the heel piece may slide either way on its track.",
   "bindings": [
     {
       "id": "marker-jester-griffon-squire",

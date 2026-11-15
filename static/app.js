@@ -1,63 +1,219 @@
-/* app.js — Ski Binding Conflict Detector frontend */
+/* app.js — Ski Binding Conflict Detector UI.
+ *
+ * Everything runs in this page: the photo is drawn on canvases and never leaves the
+ * device. Geometry lives in calib.js (photo ↔ ski mm) and matcher.js (templates vs.
+ * holes); print.js builds the 1:1 check sheets.
+ */
 'use strict';
 
-// ── Global state ─────────────────────────────────────────────────────────
-let _imageFile   = null;
-let _imageEl     = null;   // Image() of the original uploaded photo
+const $ = id => document.getElementById(id);
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-// Step 1 — calibration canvas state.
-// All click coords are in CANVAS NATURAL PIXELS = image pixels.
-// _calScale = displayWidth / naturalWidth — used only for sizing visual elements.
-let _calMode      = null;   // 'tape' | 'mp' | 'trans1' | 'trans2' | null
-let _tapePoints   = [];     // [{x,y}, …] in canvas natural pixels; 2–4 marks
-let _mpPoint      = null;   // {x,y} mount point in canvas natural pixels
-let _transL1      = null;   // {a:{x,y}, b:{x,y}} heel-side edge line
-let _transL2      = null;   // {a:{x,y}, b:{x,y}} tip-side edge line
-let _transL1Start = null;
-let _transL2Start = null;
+// Working copies larger than this are scaled down on load: beyond it mobile browsers
+// refuse to allocate the canvas, and the extra pixels add nothing to a click's accuracy.
+const MAX_WORK_PIXELS = 16e6;
+const HOLE_RADIUS_MM = 2.05;          // 4.1 mm drill
+const TOUCH_OFFSET_PX = 55;           // on touch, the mark lands this far above the finger
+
+// ── State ────────────────────────────────────────────────────────────────
+let _db = null;                       // binding_db.json
+let _img = null, _imgW = 0, _imgH = 0;
+
+// Step 1 — calibration clicks, in image pixels
+let _calMode      = null;             // 'tape' | 'mp' | 'trans1' | 'trans2' | null
+let _tapePoints   = [];
+let _mpPoint      = null;
+let _transL1      = null, _transL2      = null;   // {a:{x,y}, b:{x,y}} edge-to-edge lines
+let _transL1Start = null, _transL2Start = null;
 let _axisFlipped  = false;
-let _calScale     = 1.0;
 
-// Step 2 — holes & parameters
-let _calibration       = null;   // {mm_per_pixel, mounting_point_x_px, ski_centerline_y_px, axis_dx, axis_dy}
-let _rectifiedImageEl  = null;   // Image() of the rectified photo
-let _rectifiedBlob     = null;   // Blob for sending to API calls
-let _editedHoles       = [];     // [{x_px, y_px, radius_px, …}]
-let _holesScale        = 1.0;    // displayW / rectifiedNaturalWidth
+// Step 2
+let _cal   = null;                    // Calib calibration
+let _holes = [];                      // existing holes, image pixels
 
-// Step 3 — overlay / results
-let _lastResp        = null;
-let _selectedResult  = null;
-let _overlayHolesMm  = [];
-let _overlayHolesPx  = [];
-let _reVisTimer      = null;
+// Step 3
+let _existing   = [];                 // existing holes, ski mm
+let _results    = [];
+let _sel        = null;               // { binding, heelAuto }
+let _view       = null;               // analysis of the selected binding at the slider values
+let _clearCache = null;               // { key, result } for the mount-offset suggestion
+let _identified = null;               // Matcher.identify() output
+let _identShown = null;               // match whose pattern is drawn on the photo
 
-// Debug grid (shared across step 2 and step 3)
-let _gridEnabled   = false;
-let _gridSpacingMm = 10;
+let _gridEnabled = false, _gridSpacingMm = 10;
 
-// Zoom levels (1.0 = fit to panel width)
-let _calZoom   = 1.0;
-let _holesZoom = 1.0;
-
-// Active pointer tracking — supports pinch-to-zoom + tap detection
-const _calPtrs  = new Map();
-const _holePtrs = new Map();
-let _pinchCalDist0  = null, _pinchCalZoom0  = null;
-let _pinchHoleDist0 = null, _pinchHoleZoom0 = null;
-
-// Tap start + floating-crosshair preview position (canvas natural px)
-let _calTapStart     = null;
-let _calPreviewPos   = null;
-let _holesTapStart   = null;
-let _holesPreviewPos = null;
-let _previewRafId    = null;
+function esc(value) {
+  return String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+const signed = (n, digits = 1) => (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(digits);
 
 
-// ── File pick / drag-drop ────────────────────────────────────────────────
-const dropZone  = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
+// ── Zoomable, pannable canvas panel ──────────────────────────────────────
+// Mouse: click = tap, drag = pan, wheel = zoom.
+// Touch: two fingers pinch-zoom and pan. One finger pans, except on panels that place
+// marks: there it drags a preview that sits above the fingertip and drops on release.
+class ZoomPanel {
+  constructor(name, opts) {
+    this.panel  = $(name + '-panel');
+    this.canvas = $(name + '-canvas');
+    this.label  = $(name + '-zoom-label');
+    this.ctx    = this.canvas.getContext('2d');
+    this.opts   = opts;
+    this.zoom   = 1;
+    this.ptrs   = new Map();
+    this.tap = null; this.pinch = null; this.preview = null; this.raf = 0;
 
+    const c = this.canvas;
+    c.addEventListener('pointerdown',   e => this._down(e));
+    c.addEventListener('pointermove',   e => this._move(e));
+    c.addEventListener('pointerup',     e => this._up(e, true));
+    c.addEventListener('pointercancel', e => this._up(e, false));
+    this.panel.addEventListener('wheel', e => {
+      if (!_img) return;
+      e.preventDefault();
+      const r = this.panel.getBoundingClientRect();
+      this.setZoom(this.zoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15), { x: e.clientX - r.left, y: e.clientY - r.top });
+    }, { passive: false });
+  }
+
+  /** Screen pixels per image pixel. */
+  get scale() { return (this.canvas.getBoundingClientRect().width || 1) / (this.canvas.width || 1); }
+
+  setImageSize(w, h) { this.canvas.width = w; this.canvas.height = h; this.setZoom(1); }
+
+  redraw() { if (_img && this.panel.offsetParent !== null) this.opts.draw(this.ctx, 1 / this.scale, this); }
+  requestRedraw() { if (!this.raf) this.raf = requestAnimationFrame(() => { this.raf = 0; this.redraw(); }); }
+
+  _applyZoom(z) {
+    this.zoom = clamp(z, 1, 8);
+    this.canvas.style.width = this.zoom > 1 ? (this.zoom * 100) + '%' : '';
+    if (this.label) this.label.textContent = Math.round(this.zoom * 100) + '%';
+  }
+
+  /** Zoom keeping the image point under `focal` (panel coordinates) where it is. */
+  setZoom(level, focal) {
+    const old = this.zoom;
+    const fx = focal ? focal.x : this.panel.clientWidth / 2;
+    const fy = focal ? focal.y : this.panel.clientHeight / 2;
+    const ix = (this.panel.scrollLeft + fx) / old, iy = (this.panel.scrollTop + fy) / old;
+    this._applyZoom(level);
+    this.panel.scrollLeft = ix * this.zoom - fx;
+    this.panel.scrollTop  = iy * this.zoom - fy;
+    this.redraw();
+  }
+
+  /** Does a one-finger drag position a mark (rather than pan) right now? */
+  _places(e) {
+    return e.pointerType !== 'mouse' && !!this.opts.onTap && (!this.opts.canPlace || this.opts.canPlace());
+  }
+
+  _nat(e) {
+    const r = this.canvas.getBoundingClientRect();
+    const k = this.canvas.width / (r.width || 1);
+    const lift = this._places(e) ? TOUCH_OFFSET_PX : 0;
+    return { x: (e.clientX - r.left) * k, y: (e.clientY - r.top - lift) * k };
+  }
+
+  _mid() {
+    const [a, b] = [...this.ptrs.values()];
+    const r = this.panel.getBoundingClientRect();
+    return { x: (a.x + b.x) / 2 - r.left, y: (a.y + b.y) / 2 - r.top, d: Math.hypot(b.x - a.x, b.y - a.y) || 1 };
+  }
+
+  _down(e) {
+    if (!_img) return;
+    try { this.canvas.setPointerCapture(e.pointerId); } catch (_) { /* not capturable */ }
+    this.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.ptrs.size === 1) {
+      this.tap = { x: e.clientX, y: e.clientY, sl: this.panel.scrollLeft, st: this.panel.scrollTop, moved: false };
+      if (this._places(e)) { this.preview = this._nat(e); this.requestRedraw(); }
+    } else if (this.ptrs.size === 2) {
+      this.tap = null; this.preview = null;
+      const m = this._mid();
+      this.pinch = { d0: m.d, z0: this.zoom, ix: (this.panel.scrollLeft + m.x) / this.zoom, iy: (this.panel.scrollTop + m.y) / this.zoom };
+      this.requestRedraw();
+    }
+  }
+
+  _move(e) {
+    if (!this.ptrs.has(e.pointerId)) return;
+    this.ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (this.ptrs.size >= 2 && this.pinch) {
+      const m = this._mid();
+      this._applyZoom(this.pinch.z0 * m.d / this.pinch.d0);
+      this.panel.scrollLeft = this.pinch.ix * this.zoom - m.x;
+      this.panel.scrollTop  = this.pinch.iy * this.zoom - m.y;
+      this.requestRedraw();
+      return;
+    }
+    if (this.ptrs.size === 1 && this.tap) {
+      const dx = e.clientX - this.tap.x, dy = e.clientY - this.tap.y;
+      if (Math.hypot(dx, dy) >= 5) this.tap.moved = true;
+      if (this._places(e)) {
+        this.preview = this._nat(e);
+        this.requestRedraw();
+      } else if (this.tap.moved) {
+        this.panel.scrollLeft = this.tap.sl - dx;
+        this.panel.scrollTop  = this.tap.st - dy;
+        this.canvas.style.cursor = 'grabbing';
+      }
+    }
+  }
+
+  _up(e, completed) {
+    if (!this.ptrs.has(e.pointerId)) return;
+    const tap = this.ptrs.size === 1 ? this.tap : null;
+    const places = this._places(e);
+    const pos = this._nat(e);
+    this.ptrs.delete(e.pointerId);
+    if (this.ptrs.size < 2) this.pinch = null;
+    if (this.ptrs.size === 0) this.tap = null;
+    this.preview = null;
+    this.canvas.style.cursor = '';
+    const canTap = this.opts.onTap && (!this.opts.canPlace || this.opts.canPlace());
+    if (completed && tap && canTap && (places || !tap.moved)) this.opts.onTap(pos, this);
+    this.redraw();
+  }
+}
+
+const calPanel   = new ZoomPanel('cal',   { draw: drawCalCanvas,   onTap: onCalTap,  canPlace: () => !!_calMode });
+const holesPanel = new ZoomPanel('holes', { draw: drawHolesCanvas, onTap: onHoleTap, canPlace: () => !!_cal });
+const resPanel   = new ZoomPanel('res',   { draw: drawResCanvas });
+const PANELS = { cal: calPanel, holes: holesPanel, res: resPanel };
+
+document.querySelectorAll('.zoom-btn').forEach(btn => btn.addEventListener('click', () => {
+  const panel = PANELS[btn.dataset.zoom], dir = Number(btn.dataset.dir);
+  panel.setZoom(dir === 0 ? 1 : panel.zoom * (dir > 0 ? 1.3 : 1 / 1.3));
+}));
+
+window.addEventListener('resize', () => Object.values(PANELS).forEach(p => p.setZoom(1)));
+
+
+// ── Binding database ─────────────────────────────────────────────────────
+function validBinding(b) {
+  const holesOk = u => u && Array.isArray(u.holes) && u.holes.length > 0 &&
+    u.holes.every(h => Number.isFinite(h.x) && Number.isFinite(h.y));
+  return b && typeof b.id === 'string' && typeof b.name === 'string' &&
+    ['half_bsl', 'fixed'].includes(b.mounting_reference) && holesOk(b.front_unit) && holesOk(b.heel_unit);
+}
+
+fetch('templates/binding_db.json')
+  .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+  .then(db => {
+    const all = Array.isArray(db.bindings) ? db.bindings : [];
+    const good = all.filter(validBinding);
+    if (good.length < all.length) console.warn(`${all.length - good.length} binding template(s) skipped: malformed entry`);
+    if (!good.length) throw new Error('no usable templates');
+    _db = { ...db, bindings: good };
+  })
+  .catch(err => showError(`Could not load the binding templates (${err.message}). The page must be served over http(s), not opened as a file.`));
+
+
+// ── Photo ────────────────────────────────────────────────────────────────
+const dropZone  = $('drop-zone');
+const fileInput = $('file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
 dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop', e => {
@@ -65,247 +221,216 @@ dropZone.addEventListener('drop', e => {
   const f = e.dataTransfer.files[0];
   if (f && f.type.startsWith('image/')) loadFile(f);
 });
+fileInput.addEventListener('click', e => e.stopPropagation());
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) loadFile(fileInput.files[0]); });
 
 function loadFile(file) {
-  _imageFile = file;
-  document.getElementById('drop-label').textContent = file.name;
-  document.getElementById('drop-zone').querySelector('.drop-icon').textContent = '✅';
-
   const url = URL.createObjectURL(file);
-  _imageEl = new Image();
-  _imageEl.src = url;
-  _imageEl.onload = () => { drawCalCanvas(); };
+  const im = new Image();
+  im.onerror = () => {
+    URL.revokeObjectURL(url);
+    showError('This image could not be read. Use a JPEG or PNG (iPhone HEIC photos open in Safari only).');
+  };
+  im.onload = () => {
+    clearError();
+    let w = im.naturalWidth, h = im.naturalHeight;
+    const k = Math.min(1, Math.sqrt(MAX_WORK_PIXELS / (w * h)));
+    if (k < 1) {
+      const c = document.createElement('canvas');
+      c.width = Math.round(w * k); c.height = Math.round(h * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      _img = c; w = c.width; h = c.height;
+      URL.revokeObjectURL(url);
+    } else {
+      _img = im;
+    }
+    _imgW = w; _imgH = h;
+
+    // A new photo invalidates everything measured on the previous one.
+    _calMode = null; _tapePoints = []; _mpPoint = null;
+    _transL1 = _transL2 = _transL1Start = _transL2Start = null;
+    _axisFlipped = false; _cal = null; _holes = [];
+    _existing = []; _results = []; _sel = null; _view = null; _identified = null; _identShown = null;
+    $('btn-flip').classList.remove('active');
+    updateCalButtons(); updateCalibrateButton();
+    $('cal-mode-label').textContent = 'Photo loaded — click "① Tape marks" to start.';
+    $('cal-status').textContent = '';
+
+    $('drop-label').textContent = file.name;
+    dropZone.querySelector('.drop-icon').textContent = '✅';
+    Object.values(PANELS).forEach(p => p.setImageSize(w, h));
+    showStep(1);
+  };
+  im.src = url;
 }
 
 
-// ── Step 1: Calibration canvas ───────────────────────────────────────────
-const calCanvas = document.getElementById('cal-canvas');
-const calCtx    = calCanvas.getContext('2d');
+// ── Shared drawing helpers ───────────────────────────────────────────────
+function drawImage(ctx) { ctx.drawImage(_img, 0, 0, _imgW, _imgH); }
 
-function drawCalCanvas() {
-  if (!_imageEl) return;
-  const displayW = calCanvas.offsetWidth || 340;
-  const ratio    = _imageEl.naturalHeight / _imageEl.naturalWidth;
-  calCanvas.width  = _imageEl.naturalWidth;
-  calCanvas.height = _imageEl.naturalHeight;
-  calCanvas.style.height = (displayW * ratio) + 'px';
-  _calScale = displayW / _imageEl.naturalWidth;
+function drawCross(ctx, x, y, arm, lw, color, borderColor) {
+  ctx.lineCap = 'round';
+  const stroke = () => {
+    ctx.beginPath(); ctx.moveTo(x - arm, y); ctx.lineTo(x + arm, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y - arm); ctx.lineTo(x, y + arm); ctx.stroke();
+  };
+  if (borderColor) { ctx.strokeStyle = borderColor; ctx.lineWidth = lw * 2.6; stroke(); }
+  ctx.strokeStyle = color; ctx.lineWidth = lw; stroke();
+}
 
-  calCtx.drawImage(_imageEl, 0, 0);
+function line(ctx, a, b) { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
 
-  // Tape marks and connecting line
-  if (_tapePoints.length >= 1) {
-    // Connecting line between marks
-    if (_tapePoints.length >= 2) {
-      calCtx.beginPath();
-      calCtx.moveTo(_tapePoints[0].x, _tapePoints[0].y);
-      for (let i = 1; i < _tapePoints.length; i++) calCtx.lineTo(_tapePoints[i].x, _tapePoints[i].y);
-      calCtx.strokeStyle = '#00e5ff';
-      calCtx.lineWidth = 2 / _calScale;
-      calCtx.setLineDash([8 / _calScale, 4 / _calScale]);
-      calCtx.stroke();
-      calCtx.setLineDash([]);
+/** Radius in image px of a real 4.1 mm hole at ski position xMm, never smaller than minScreenPx. */
+function holeRadiusPx(xMm, k, minScreenPx) {
+  return Math.max(HOLE_RADIUS_MM * Calib.pxPerMm(_cal, xMm), minScreenPx * k);
+}
 
-      // Scale estimate from first interval
-      const d0 = Math.hypot(_tapePoints[1].x - _tapePoints[0].x, _tapePoints[1].y - _tapePoints[0].y);
-      const refMm = parseFloat(document.getElementById('ref-mm').value) || 100;
-      document.getElementById('cal-status').textContent =
-        `${_tapePoints.length} mark(s) · first interval ${d0.toFixed(0)} px = ${refMm} mm → ~${(refMm / d0).toFixed(4)} mm/px` +
-        (_tapePoints.length >= 3 ? ' · parallax correction enabled' : '');
+/** Millimetre grid in the ski frame. With parallax correction the cells follow the perspective. */
+function drawGrid(ctx, k) {
+  const sp = _gridSpacingMm;
+  const corners = [[0, 0], [_imgW, 0], [0, _imgH], [_imgW, _imgH]].map(([x, y]) => Calib.toMm(_cal, { x, y }));
+  const xMin = Math.min(...corners.map(c => c.x)), xMax = Math.max(...corners.map(c => c.x));
+  const yMax = Math.max(...corners.map(c => Math.abs(c.y)));
+  if (!Number.isFinite(xMin + xMax + yMax) || (xMax - xMin) / sp > 1500 || yMax / sp > 750) return;
+  ctx.save();
+  ctx.lineWidth = Math.max(1, k);
+  ctx.setLineDash([4 * k, 4 * k]);
+  const style = i => { ctx.strokeStyle = i === 0 ? 'rgba(255,255,100,0.55)' : i % 10 === 0 ? 'rgba(255,255,255,0.34)' : 'rgba(255,255,255,0.18)'; };
+  for (let i = Math.ceil(xMin / sp); i <= Math.floor(xMax / sp); i++) {
+    style(i);
+    line(ctx, Calib.toPx(_cal, { x: i * sp, y: -yMax }), Calib.toPx(_cal, { x: i * sp, y: yMax }));
+  }
+  const n = Math.floor(yMax / sp);
+  for (let j = -n; j <= n; j++) {
+    style(j);
+    line(ctx, Calib.toPx(_cal, { x: xMin, y: j * sp }), Calib.toPx(_cal, { x: xMax, y: j * sp }));
+  }
+  ctx.restore();
+}
+
+document.querySelectorAll('.btn-grid-toggle').forEach(btn => btn.addEventListener('click', () => {
+  _gridEnabled = !_gridEnabled;
+  document.querySelectorAll('.btn-grid-toggle').forEach(b => {
+    b.textContent = _gridEnabled ? 'Grid on' : 'Grid off';
+    b.classList.toggle('active', _gridEnabled);
+  });
+  holesPanel.redraw(); resPanel.redraw();
+}));
+document.querySelectorAll('.btn-grid-spacing').forEach(btn => btn.addEventListener('click', () => {
+  _gridSpacingMm = Number(btn.dataset.mm);
+  document.querySelectorAll('.btn-grid-spacing').forEach(b => b.classList.toggle('active', Number(b.dataset.mm) === _gridSpacingMm));
+  holesPanel.redraw(); resPanel.redraw();
+}));
+
+
+// ── Step 1: calibration canvas ───────────────────────────────────────────
+function drawCalCanvas(ctx, k, panel) {
+  drawImage(ctx);
+
+  const dot = (x, y, color, label) => {
+    const r = 8 * k;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+    if (label) {
+      ctx.font = `bold ${14 * k}px sans-serif`;
+      ctx.lineWidth = 3 * k; ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+      ctx.strokeText(label, x + r + 3 * k, y + 5 * k);
+      ctx.fillStyle = '#fff'; ctx.fillText(label, x + r + 3 * k, y + 5 * k);
     }
-    _tapePoints.forEach((pt, i) => drawDot(pt.x, pt.y, '#00e5ff', String(i + 1)));
-  }
+  };
+  const transLine = (l, color, label) => {
+    ctx.strokeStyle = color; ctx.lineWidth = 2 * k;
+    line(ctx, l.a, l.b);
+    dot(l.a.x, l.a.y, color, ''); dot(l.b.x, l.b.y, color, '');
+    dot((l.a.x + l.b.x) / 2, (l.a.y + l.b.y) / 2, color, label);
+  };
 
-  // Mount point crosshair
-  if (_mpPoint) {
-    const arm = 16 / _calScale;
-    calCtx.strokeStyle = '#ffd700';
-    calCtx.lineWidth   = 3 / _calScale;
-    calCtx.lineCap     = 'round';
-    calCtx.beginPath(); calCtx.moveTo(_mpPoint.x - arm, _mpPoint.y); calCtx.lineTo(_mpPoint.x + arm, _mpPoint.y); calCtx.stroke();
-    calCtx.beginPath(); calCtx.moveTo(_mpPoint.x, _mpPoint.y - arm); calCtx.lineTo(_mpPoint.x, _mpPoint.y + arm); calCtx.stroke();
+  if (_tapePoints.length >= 2) {
+    ctx.beginPath();
+    ctx.moveTo(_tapePoints[0].x, _tapePoints[0].y);
+    for (let i = 1; i < _tapePoints.length; i++) ctx.lineTo(_tapePoints[i].x, _tapePoints[i].y);
+    ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 2 * k;
+    ctx.setLineDash([8 * k, 4 * k]); ctx.stroke(); ctx.setLineDash([]);
   }
+  _tapePoints.forEach((pt, i) => dot(pt.x, pt.y, '#00e5ff', String(i + 1)));
 
-  // Axis arrow
+  if (_mpPoint) drawCross(ctx, _mpPoint.x, _mpPoint.y, 16 * k, 3 * k, '#ffd700', 'rgba(0,0,0,0.6)');
+
   if (_mpPoint && (_tapePoints.length >= 2 || (_transL1 && _transL2))) {
-    const { axisDx: adx, axisDy: ady } = _computeAxisAndMount();
-    drawAxisArrow(_mpPoint.x, _mpPoint.y, adx, ady);
+    const { axisDx: adx, axisDy: ady } = computeAxisAndMount();
+    const len = 100 * k, hw = 12 * k;
+    const ox = _mpPoint.x, oy = _mpPoint.y, ex = ox + adx * len, ey = oy + ady * len;
+    ctx.strokeStyle = ctx.fillStyle = '#ff6600';
+    ctx.lineWidth = 3 * k; ctx.lineCap = 'round';
+    line(ctx, { x: ox, y: oy }, { x: ex, y: ey });
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - adx * hw * 1.5 - ady * hw, ey - ady * hw * 1.5 + adx * hw);
+    ctx.lineTo(ex - adx * hw * 1.5 + ady * hw, ey - ady * hw * 1.5 - adx * hw);
+    ctx.closePath(); ctx.fill();
+    ctx.font = `bold ${12 * k}px sans-serif`;
+    ctx.fillText('→TIP', ex + adx * (hw + 2 * k), ey + ady * (hw + 2 * k));
   }
 
-  // Transversal lines L1 / L2
-  if (_transL1)      drawTransLine(_transL1, '#ff55ff', 'L1');
-  if (_transL1Start) drawDot(_transL1Start.x, _transL1Start.y, '#ff55ff', 'L1…');
-  if (_transL2)      drawTransLine(_transL2, '#cc44cc', 'L2');
-  if (_transL2Start) drawDot(_transL2Start.x, _transL2Start.y, '#cc44cc', 'L2…');
+  if (_transL1)      transLine(_transL1, '#ff55ff', 'L1');
+  if (_transL1Start) dot(_transL1Start.x, _transL1Start.y, '#ff55ff', 'L1…');
+  if (_transL2)      transLine(_transL2, '#cc44cc', 'L2');
+  if (_transL2Start) dot(_transL2Start.x, _transL2Start.y, '#cc44cc', 'L2…');
 
   if (_transL1 && _transL2) {
     const midA = { x: (_transL1.a.x + _transL1.b.x) / 2, y: (_transL1.a.y + _transL1.b.y) / 2 };
     const midB = { x: (_transL2.a.x + _transL2.b.x) / 2, y: (_transL2.a.y + _transL2.b.y) / 2 };
-    const dx = midB.x - midA.x, dy = midB.y - midA.y;
-    const len = Math.hypot(dx, dy) || 1;
-    const ext = Math.max(calCanvas.width, calCanvas.height);
-    calCtx.beginPath();
-    calCtx.moveTo(midA.x - (dx / len) * ext, midA.y - (dy / len) * ext);
-    calCtx.lineTo(midA.x + (dx / len) * ext, midA.y + (dy / len) * ext);
-    calCtx.strokeStyle = 'rgba(255,100,255,0.65)';
-    calCtx.lineWidth = 2 / _calScale;
-    calCtx.setLineDash([8 / _calScale, 4 / _calScale]);
-    calCtx.stroke();
-    calCtx.setLineDash([]);
-    drawDot(midA.x, midA.y, '#ff55ff', 'A');
-    drawDot(midB.x, midB.y, '#ff55ff', 'B');
+    const dx = midB.x - midA.x, dy = midB.y - midA.y, len = Math.hypot(dx, dy) || 1;
+    const ext = Math.max(_imgW, _imgH);
+    ctx.strokeStyle = 'rgba(255,100,255,0.65)'; ctx.lineWidth = 2 * k;
+    ctx.setLineDash([8 * k, 4 * k]);
+    line(ctx, { x: midA.x - dx / len * ext, y: midA.y - dy / len * ext }, { x: midA.x + dx / len * ext, y: midA.y + dy / len * ext });
+    ctx.setLineDash([]);
   }
 
-  // Floating crosshair preview (touch or mouse while button held)
-  if (_calPreviewPos && _calMode) {
-    const { x, y } = _calPreviewPos;
-    calCtx.save();
-    calCtx.globalAlpha = 0.72;
-    const r = 10 / _calScale;
+  // Preview of the mark being placed (touch drag)
+  const pv = panel.preview;
+  if (pv && _calMode) {
+    ctx.save();
+    ctx.globalAlpha = 0.75;
     if (_calMode === 'tape') {
-      calCtx.beginPath();
-      calCtx.arc(x, y, r, 0, Math.PI * 2);
-      calCtx.fillStyle = '#00e5ff';
-      calCtx.fill();
-      calCtx.fillStyle = '#000';
-      calCtx.font = `bold ${13 / _calScale}px sans-serif`;
-      calCtx.fillText(String(_tapePoints.length + 1), x + r + 2 / _calScale, y + 4 / _calScale);
+      dot(pv.x, pv.y, '#00e5ff', String(_tapePoints.length + 1));
     } else if (_calMode === 'mp') {
-      const arm = 16 / _calScale;
-      calCtx.strokeStyle = '#ffd700';
-      calCtx.lineWidth = 3 / _calScale;
-      calCtx.lineCap = 'round';
-      calCtx.beginPath(); calCtx.moveTo(x - arm, y); calCtx.lineTo(x + arm, y); calCtx.stroke();
-      calCtx.beginPath(); calCtx.moveTo(x, y - arm); calCtx.lineTo(x, y + arm); calCtx.stroke();
-    } else if (_calMode === 'trans1' || _calMode === 'trans2') {
+      drawCross(ctx, pv.x, pv.y, 16 * k, 3 * k, '#ffd700', 'rgba(0,0,0,0.6)');
+    } else {
       const col = _calMode === 'trans1' ? '#ff55ff' : '#cc44cc';
-      calCtx.beginPath();
-      calCtx.arc(x, y, r, 0, Math.PI * 2);
-      calCtx.fillStyle = col;
-      calCtx.fill();
-      const startPt = _calMode === 'trans1' ? _transL1Start : _transL2Start;
-      if (startPt) {
-        calCtx.beginPath();
-        calCtx.moveTo(startPt.x, startPt.y);
-        calCtx.lineTo(x, y);
-        calCtx.strokeStyle = col;
-        calCtx.lineWidth = 2 / _calScale;
-        calCtx.stroke();
-      }
+      const start = _calMode === 'trans1' ? _transL1Start : _transL2Start;
+      if (start) { ctx.strokeStyle = col; ctx.lineWidth = 2 * k; line(ctx, start, pv); }
+      dot(pv.x, pv.y, col, '');
     }
-    calCtx.restore();
+    ctx.restore();
   }
+
+  updateCalStatus();
 }
 
-function drawDot(x, y, color, label) {
-  const r = 8 / _calScale;
-  calCtx.beginPath();
-  calCtx.arc(x, y, r, 0, Math.PI * 2);
-  calCtx.fillStyle = color;
-  calCtx.fill();
-  calCtx.fillStyle = '#000';
-  calCtx.font = `${14 / _calScale}px sans-serif`;
-  calCtx.fillText(label, x + r + 3 / _calScale, y + 5 / _calScale);
+function updateCalStatus() {
+  const el = $('cal-status');
+  if (_tapePoints.length < 2) { el.textContent = ''; return; }
+  const d0 = Math.hypot(_tapePoints[1].x - _tapePoints[0].x, _tapePoints[1].y - _tapePoints[0].y);
+  const refMm = parseFloat($('ref-mm').value) || 100;
+  el.textContent = `${_tapePoints.length} mark(s) · first interval ${d0.toFixed(0)} px = ${refMm} mm → ~${(refMm / d0).toFixed(4)} mm/px` +
+    (_tapePoints.length >= 3 ? ' · parallax correction enabled' : ' · add a 3rd mark for parallax correction');
 }
 
-function drawTransLine(line, color, label) {
-  calCtx.beginPath();
-  calCtx.moveTo(line.a.x, line.a.y);
-  calCtx.lineTo(line.b.x, line.b.y);
-  calCtx.strokeStyle = color;
-  calCtx.lineWidth = 2 / _calScale;
-  calCtx.stroke();
-  drawDot(line.a.x, line.a.y, color, '');
-  drawDot(line.b.x, line.b.y, color, '');
-  drawDot((line.a.x + line.b.x) / 2, (line.a.y + line.b.y) / 2, color, label);
-}
-
-function drawAxisArrow(ox, oy, adx, ady) {
-  const len = 100 / _calScale;
-  const hw  =  12 / _calScale;
-  const ex  = ox + adx * len, ey = oy + ady * len;
-  calCtx.strokeStyle = '#ff6600';
-  calCtx.fillStyle   = '#ff6600';
-  calCtx.lineWidth   = 3 / _calScale;
-  calCtx.lineCap     = 'round';
-  calCtx.beginPath(); calCtx.moveTo(ox, oy); calCtx.lineTo(ex, ey); calCtx.stroke();
-  calCtx.beginPath();
-  calCtx.moveTo(ex, ey);
-  calCtx.lineTo(ex - adx * hw * 1.5 - ady * hw, ey - ady * hw * 1.5 + adx * hw);
-  calCtx.lineTo(ex - adx * hw * 1.5 + ady * hw, ey - ady * hw * 1.5 - adx * hw);
-  calCtx.closePath(); calCtx.fill();
-  calCtx.font = `bold ${12 / _calScale}px sans-serif`;
-  calCtx.fillStyle = '#ff6600';
-  calCtx.fillText('→TIP', ex + adx * (hw + 2 / _calScale), ey + ady * (hw + 2 / _calScale));
-}
-
-function flipAxis() {
-  _axisFlipped = !_axisFlipped;
-  document.getElementById('btn-flip').classList.toggle('active', _axisFlipped);
-  drawCalCanvas();
-}
-
-// Canvas pointer handlers — tap detection + pinch zoom + floating crosshair
-function _calNatCoords(e) {
-  const rect = calCanvas.getBoundingClientRect();
-  const yOff = e.pointerType === 'touch' ? -55 * (calCanvas.height / rect.height) : 0;
-  return {
-    x: (e.clientX - rect.left) * (calCanvas.width  / (rect.width  || 1)),
-    y: (e.clientY - rect.top)  * (calCanvas.height / (rect.height || 1)) + yOff,
-  };
-}
-
-calCanvas.addEventListener('pointerdown', e => {
-  _calPtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (_calPtrs.size === 1) {
-    _calTapStart = { x: e.clientX, y: e.clientY };
-  } else if (_calPtrs.size === 2) {
-    _calTapStart = null; _calPreviewPos = null;
-    const pts = [..._calPtrs.values()];
-    _pinchCalDist0 = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-    _pinchCalZoom0 = _calZoom;
-  }
-});
-
-calCanvas.addEventListener('pointermove', e => {
-  _calPtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (_calPtrs.size >= 2 && _pinchCalDist0 !== null) {
-    const pts = [..._calPtrs.values()];
-    const panelRect = document.getElementById('cal-panel').getBoundingClientRect();
-    const focalPt = { x: (pts[0].x + pts[1].x) / 2 - panelRect.left, y: (pts[0].y + pts[1].y) / 2 - panelRect.top };
-    setCalZoom(_pinchCalZoom0 * Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) / _pinchCalDist0, focalPt);
-    return;
-  }
-  if (_calPtrs.size === 1 && _calTapStart && _calMode) {
-    _calPreviewPos = _calNatCoords(e);
-    if (!_previewRafId) _previewRafId = requestAnimationFrame(() => { _previewRafId = null; drawCalCanvas(); });
-  }
-});
-
-calCanvas.addEventListener('pointerup', e => {
-  const wasSingle = _calPtrs.size === 1 && _calTapStart !== null;
-  const tapStart  = _calTapStart;
-  _calPtrs.delete(e.pointerId);
-  _calPreviewPos = null;
-  if (_calPtrs.size < 2) { _pinchCalDist0 = null; _pinchCalZoom0 = null; }
-  if (_calPtrs.size === 0) _calTapStart = null;
-
-  if (!wasSingle || !tapStart) { drawCalCanvas(); return; }
-  if (e.pointerType !== 'touch' && Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) >= 10) { drawCalCanvas(); return; }
-  if (!_calMode) { drawCalCanvas(); return; }
-
-  const { x: natX, y: natY } = _calNatCoords(e);
-  const thr = 20 / _calScale;
-  const lbl = document.getElementById('cal-mode-label');
+function onCalTap(pos, panel) {
+  const { x, y } = pos;
+  const thr = 20 / panel.scale;
+  const near = p => Math.hypot(p.x - x, p.y - y) < thr;
+  const lbl = $('cal-mode-label');
 
   if (_calMode === 'tape') {
-    const idx = _tapePoints.findIndex(p => Math.hypot(p.x - natX, p.y - natY) < thr);
+    const idx = _tapePoints.findIndex(near);
     if (idx >= 0) {
       _tapePoints.splice(idx, 1);
       lbl.textContent = `Mark removed — ${_tapePoints.length} tape mark(s) set.`;
     } else {
-      _tapePoints.push({ x: natX, y: natY });
+      _tapePoints.push({ x, y });
       const n = _tapePoints.length;
       if (n >= 4) {
         _calMode = null; updateCalButtons();
@@ -314,767 +439,566 @@ calCanvas.addEventListener('pointerup', e => {
         lbl.textContent = `Mark ${n} set — tap next${n >= 2 ? ' or switch tool' : ''} (${4 - n} more for best correction).`;
       }
     }
-    _updateCalibrateButton();
-
   } else if (_calMode === 'mp') {
-    if (_mpPoint && Math.hypot(_mpPoint.x - natX, _mpPoint.y - natY) < thr) {
+    if (_mpPoint && near(_mpPoint)) {
       _mpPoint = null;
       lbl.textContent = 'Mount point removed — tap to set it again.';
     } else {
-      _mpPoint = { x: natX, y: natY };
+      _mpPoint = { x, y };
       _calMode = null; updateCalButtons();
       lbl.textContent = '✓ Mounting point set. Click "Calibrate →", or set axis lines ③④.';
     }
-    _updateCalibrateButton();
-
   } else if (_calMode === 'trans1') {
     if (!_transL1Start) {
-      if (_transL1 && (Math.hypot(_transL1.a.x - natX, _transL1.a.y - natY) < thr ||
-                       Math.hypot(_transL1.b.x - natX, _transL1.b.y - natY) < thr)) {
+      if (_transL1 && (near(_transL1.a) || near(_transL1.b))) {
         _transL1 = null; lbl.textContent = 'L1 removed — tap one ski edge to start again.';
       } else {
-        _transL1Start = { x: natX, y: natY }; lbl.textContent = 'L1: now tap the OPPOSITE ski edge.';
+        _transL1Start = { x, y }; lbl.textContent = 'L1: now tap the OPPOSITE ski edge.';
       }
     } else {
-      _transL1 = { a: _transL1Start, b: { x: natX, y: natY } };
+      _transL1 = { a: _transL1Start, b: { x, y } };
       _transL1Start = null; _calMode = null; updateCalButtons();
       lbl.textContent = '✓ L1 set. Now click "④ Axis L2" (tip side).';
     }
-
   } else if (_calMode === 'trans2') {
     if (!_transL2Start) {
-      if (_transL2 && (Math.hypot(_transL2.a.x - natX, _transL2.a.y - natY) < thr ||
-                       Math.hypot(_transL2.b.x - natX, _transL2.b.y - natY) < thr)) {
+      if (_transL2 && (near(_transL2.a) || near(_transL2.b))) {
         _transL2 = null; lbl.textContent = 'L2 removed — tap one ski edge to start again.';
       } else {
-        _transL2Start = { x: natX, y: natY }; lbl.textContent = 'L2: now tap the OPPOSITE ski edge.';
+        _transL2Start = { x, y }; lbl.textContent = 'L2: now tap the OPPOSITE ski edge.';
       }
     } else {
-      _transL2 = { a: _transL2Start, b: { x: natX, y: natY } };
+      _transL2 = { a: _transL2Start, b: { x, y } };
       _transL2Start = null; _calMode = null; updateCalButtons();
       lbl.textContent = '✓ Centreline from L1 & L2. Click "Calibrate →".';
     }
   }
-  drawCalCanvas();
-});
-
-calCanvas.addEventListener('pointercancel', e => {
-  _calPtrs.delete(e.pointerId); _calTapStart = null; _calPreviewPos = null;
-  if (_calPtrs.size < 2) { _pinchCalDist0 = null; _pinchCalZoom0 = null; }
-  drawCalCanvas();
-});
+  updateCalibrateButton();
+}
 
 function startCalMode(mode) {
+  if (!_img) { showError('Choose a photo first.'); return; }
   _calMode = mode;
   updateCalButtons();
+  const lbl = $('cal-mode-label');
   if (mode === 'tape') {
-    _tapePoints  = [];
-    _axisFlipped = false;
-    document.getElementById('btn-flip').classList.remove('active');
-    document.getElementById('cal-mode-label').textContent =
-      'Click the FIRST tape mark (heel side). Then click 1–3 more marks at equal spacing toward the tip.';
+    _tapePoints = []; _axisFlipped = false;
+    $('btn-flip').classList.remove('active');
+    lbl.textContent = 'Click the FIRST tape mark (heel side). Then click 1–3 more marks at equal spacing toward the tip.';
   } else if (mode === 'mp') {
-    document.getElementById('cal-mode-label').textContent =
-      'Click the ski CENTRE MARK (half-sole / mounting reference line on ski).';
+    lbl.textContent = 'Click the ski CENTRE MARK (half-sole / mounting reference line on ski).';
   } else if (mode === 'trans1') {
     _transL1 = null; _transL1Start = null;
-    document.getElementById('cal-mode-label').textContent =
-      'L1 (heel side): click one ski EDGE, then click the OPPOSITE edge.';
+    lbl.textContent = 'L1 (heel side): click one ski EDGE, then click the OPPOSITE edge.';
   } else if (mode === 'trans2') {
     _transL2 = null; _transL2Start = null;
-    document.getElementById('cal-mode-label').textContent =
-      'L2 (tip side): click one ski EDGE, then click the OPPOSITE edge.';
+    lbl.textContent = 'L2 (tip side): click one ski EDGE, then click the OPPOSITE edge.';
   }
-  drawCalCanvas();
+  updateCalibrateButton();
+  // On a phone the tool buttons sit below the photo: bring the photo back into view.
+  $('cal-panel').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  calPanel.redraw();
 }
+
+document.querySelectorAll('[data-cal-mode]').forEach(btn => btn.addEventListener('click', () => startCalMode(btn.dataset.calMode)));
+$('btn-flip').addEventListener('click', () => {
+  _axisFlipped = !_axisFlipped;
+  $('btn-flip').classList.toggle('active', _axisFlipped);
+  calPanel.redraw();
+});
+$('ref-mm').addEventListener('input', () => calPanel.redraw());
 
 function updateCalButtons() {
-  document.getElementById('btn-tape').classList.toggle('active',   _calMode === 'tape');
-  document.getElementById('btn-mp').classList.toggle('active',     _calMode === 'mp');
-  document.getElementById('btn-trans1').classList.toggle('active', _calMode === 'trans1');
-  document.getElementById('btn-trans2').classList.toggle('active', _calMode === 'trans2');
+  for (const [id, mode] of [['btn-tape', 'tape'], ['btn-mp', 'mp'], ['btn-trans1', 'trans1'], ['btn-trans2', 'trans2']]) {
+    $(id).classList.toggle('active', _calMode === mode);
+  }
 }
 
-function _updateCalibrateButton() {
-  const btn = document.getElementById('calibrate-btn');
-  if (btn) btn.disabled = !(_tapePoints.length >= 2 && _mpPoint);
+function updateCalibrateButton() {
+  $('calibrate-btn').disabled = !(_tapePoints.length >= 2 && _mpPoint);
 }
 
-// Compute axis direction + (possibly projected) mount point from current calibration state
-function _computeAxisAndMount() {
+/** Ski axis direction and mount point (projected on the centreline when L1/L2 are set). */
+function computeAxisAndMount() {
   let axisDx, axisDy;
-  let mpX = _mpPoint ? _mpPoint.x : 0;
-  let mpY = _mpPoint ? _mpPoint.y : 0;
+  let mpX = _mpPoint ? _mpPoint.x : 0, mpY = _mpPoint ? _mpPoint.y : 0;
 
   if (_transL1 && _transL2) {
     const midA = { x: (_transL1.a.x + _transL1.b.x) / 2, y: (_transL1.a.y + _transL1.b.y) / 2 };
     const midB = { x: (_transL2.a.x + _transL2.b.x) / 2, y: (_transL2.a.y + _transL2.b.y) / 2 };
-    const dx = midB.x - midA.x, dy = midB.y - midA.y;
-    const len = Math.hypot(dx, dy) || 1;
+    const dx = midB.x - midA.x, dy = midB.y - midA.y, len = Math.hypot(dx, dy) || 1;
     axisDx = dx / len; axisDy = dy / len;
     if (_mpPoint) {
       const t = (_mpPoint.x - midA.x) * axisDx + (_mpPoint.y - midA.y) * axisDy;
-      mpX = midA.x + t * axisDx;
-      mpY = midA.y + t * axisDy;
+      mpX = midA.x + t * axisDx; mpY = midA.y + t * axisDy;
     }
   } else if (_tapePoints.length >= 2) {
     const first = _tapePoints[0], last = _tapePoints[_tapePoints.length - 1];
-    const dx = last.x - first.x, dy = last.y - first.y;
-    const len = Math.hypot(dx, dy) || 1;
+    const dx = last.x - first.x, dy = last.y - first.y, len = Math.hypot(dx, dy) || 1;
     axisDx = dx / len; axisDy = dy / len;
   } else {
     axisDx = -1.0; axisDy = 0.0;
   }
-
   if (_axisFlipped) { axisDx = -axisDx; axisDy = -axisDy; }
   return { axisDx, axisDy, mpX, mpY };
 }
 
-window.addEventListener('resize', () => {
-  if (_imageEl)           { _calZoom = 1.0; calCanvas.style.width = '';   drawCalCanvas();   _updateZoomLabel('cal-zoom-label', 1.0); }
-  if (_rectifiedImageEl)  { _holesZoom = 1.0; holesCanvas.style.width = ''; drawHolesCanvas(); _updateZoomLabel('holes-zoom-label', 1.0); }
+$('calibrate-btn').addEventListener('click', () => {
+  if (!_img)                  { showError('No image loaded.'); return; }
+  if (_tapePoints.length < 2) { showError('Click at least 2 tape marks first.'); return; }
+  if (!_mpPoint)              { showError('Click the mounting point on the ski.'); return; }
+  const refMm = parseFloat($('ref-mm').value);
+  if (!(refMm > 0))           { showError('Enter a valid mark spacing.'); return; }
+
+  const { axisDx, axisDy, mpX, mpY } = computeAxisAndMount();
+  try {
+    _cal = Calib.build({
+      tape: _tapePoints, spacingMm: refMm,
+      mount: { x: mpX, y: mpY }, axis: { dx: axisDx, dy: axisDy },
+      imageWidth: _imgW, imageHeight: _imgH,
+    });
+  } catch (err) {
+    showError(err.message);
+    return;
+  }
+  clearError();
+  _calMode = null; updateCalButtons();
+  renderCalSummary();
+  showStep(2);
 });
 
-
-// ── Step 1: Calibrate action ─────────────────────────────────────────────
-async function doCalibrate() {
-  if (!_imageFile)              { showError('No image loaded.');                        return; }
-  if (_tapePoints.length < 2)  { showError('Click at least 2 tape marks first.');      return; }
-  if (!_mpPoint)                { showError('Click the mounting point on the ski.');    return; }
-
-  const refMm = parseFloat(document.getElementById('ref-mm').value);
-  if (isNaN(refMm) || refMm <= 0) { showError('Enter a valid mark spacing.'); return; }
-
-  const { axisDx, axisDy, mpX, mpY } = _computeAxisAndMount();
-  clearError();
-  setLoading(true, 'Calibrating…');
-
-  const fd = new FormData();
-  fd.append('image', _imageFile);
-  fd.append('tape_points_json', JSON.stringify(_tapePoints.map(p => ({ x_px: p.x, y_px: p.y }))));
-  fd.append('tape_spacing_mm', refMm);
-  fd.append('mounting_point_x_px', mpX);
-  fd.append('mounting_point_y_px', mpY);
-  fd.append('axis_dx', axisDx);
-  fd.append('axis_dy', axisDy);
-
-  try {
-    const resp = await fetch('/api/calibrate', { method: 'POST', body: fd });
-    if (!resp.ok) throw new Error(`Server error ${resp.status}: ${await resp.text()}`);
-    const data = await resp.json();
-
-    _calibration  = data.calibration;
-    _editedHoles  = [];
-    _rectifiedBlob = base64ToBlob(data.rectified_image_base64, 'image/jpeg');
-
-    _rectifiedImageEl = new Image();
-    _rectifiedImageEl.onload = () => {
-      const cal = _calibration;
-      const corrNote = cal.perspective_corrected ? ' · parallax corrected' : '';
-      document.getElementById('cal-summary').textContent =
-        `Scale: ${cal.mm_per_pixel.toFixed(4)} mm/px${corrNote}`;
-      drawHolesCanvas();
-    };
-    _rectifiedImageEl.src = URL.createObjectURL(_rectifiedBlob);
-
-    showStep(2);
-  } catch (err) {
-    showError(err.message || 'Calibration failed.');
-  } finally {
-    setLoading(false);
+function renderCalSummary() {
+  const c = _cal;
+  $('cal-summary').textContent = `Scale: ${c.mmPerPx.toFixed(4)} mm/px · ` +
+    (c.corrected ? `parallax corrected (${c.nMarks} marks)` : 'no parallax correction');
+  const warn = [];
+  if (!c.corrected) {
+    warn.push('Only 2 tape marks: perspective is not corrected. A camera tilted 10° along the ski then puts the binding holes off by several millimetres — add a third mark.');
   }
-}
-
-function base64ToBlob(b64, mime) {
-  const binary = atob(b64);
-  const arr = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) arr[i] = binary.charCodeAt(i);
-  return new Blob([arr], { type: mime });
+  if (c.scaleSpread > 0.12) {
+    warn.push(`Strong perspective: the scale changes by ${(c.scaleSpread * 100).toFixed(0)} % along the tape. Lengthwise this is corrected, sideways only approximately — a photo taken more squarely above the ski will be more accurate.`);
+  }
+  if (c.residualMm > 0.7) {
+    warn.push(`The tape marks do not line up with any one perspective (off by ${c.residualMm.toFixed(1)} mm) — one of them is probably misplaced.`);
+  }
+  const el = $('cal-warning');
+  el.style.display = warn.length ? '' : 'none';
+  el.innerHTML = warn.map(w => `<div>⚠ ${esc(w)}</div>`).join('');
 }
 
 
-// ── Step 2: Holes canvas ─────────────────────────────────────────────────
-const holesCanvas = document.getElementById('holes-canvas');
-const holesCtx    = holesCanvas.getContext('2d');
+// ── Step 2: mark holes ───────────────────────────────────────────────────
+function drawHolesCanvas(ctx, k, panel) {
+  drawImage(ctx);
+  if (!_cal) return;
+  if (_gridEnabled) drawGrid(ctx, k);
+  drawCross(ctx, _cal.mount.x, _cal.mount.y, 16 * k, 3 * k, '#ffd700', 'rgba(0,0,0,0.6)');
 
-function drawHolesCanvas() {
-  if (!_rectifiedImageEl) return;
-  const displayW = holesCanvas.offsetWidth || 340;
-  const ratio    = _rectifiedImageEl.naturalHeight / _rectifiedImageEl.naturalWidth;
-  holesCanvas.width  = _rectifiedImageEl.naturalWidth;
-  holesCanvas.height = _rectifiedImageEl.naturalHeight;
-  holesCanvas.style.height = (displayW * ratio) + 'px';
-  _holesScale = displayW / _rectifiedImageEl.naturalWidth;
-
-  holesCtx.drawImage(_rectifiedImageEl, 0, 0);
-
-  // Debug grid
-  if (_gridEnabled && _calibration) {
-    const cal = _calibration;
-    _drawGrid(holesCtx, holesCanvas.width, holesCanvas.height,
-      cal.mounting_point_x_px, cal.ski_centerline_y_px,
-      cal.axis_dx, cal.axis_dy, cal.mm_per_pixel);
-  }
-
-  // Mount point crosshair
-  if (_calibration) {
-    const { mounting_point_x_px: mpx, ski_centerline_y_px: mpy } = _calibration;
-    const arm = 16 / _holesScale;
-    holesCtx.strokeStyle = '#ffd700';
-    holesCtx.lineWidth   = 3 / _holesScale;
-    holesCtx.lineCap     = 'round';
-    holesCtx.beginPath(); holesCtx.moveTo(mpx - arm, mpy); holesCtx.lineTo(mpx + arm, mpy); holesCtx.stroke();
-    holesCtx.beginPath(); holesCtx.moveTo(mpx, mpy - arm); holesCtx.lineTo(mpx, mpy + arm); holesCtx.stroke();
-  }
-
-  // Holes
-  (_editedHoles || []).forEach(h => {
-    const r = Math.max(h.radius_px || 5, 15 / _holesScale);
-    holesCtx.beginPath();
-    holesCtx.arc(h.x_px, h.y_px, r, 0, Math.PI * 2);
-    holesCtx.strokeStyle = 'rgba(50,255,100,0.9)';
-    holesCtx.lineWidth = 3 / _holesScale;
-    holesCtx.stroke();
-  });
-
-  // Floating crosshair preview for holes
-  if (_holesPreviewPos) {
-    const { x, y } = _holesPreviewPos;
-    const r = Math.max(15 / _holesScale, 12);
-    holesCtx.save();
-    holesCtx.globalAlpha = 0.65;
-    holesCtx.beginPath();
-    holesCtx.arc(x, y, r, 0, Math.PI * 2);
-    holesCtx.strokeStyle = 'rgba(50,255,100,0.9)';
-    holesCtx.lineWidth = 3 / _holesScale;
-    holesCtx.setLineDash([4 / _holesScale, 4 / _holesScale]);
-    holesCtx.stroke();
-    holesCtx.setLineDash([]);
-    const arm = r * 0.6;
-    holesCtx.strokeStyle = 'rgba(50,255,100,0.9)';
-    holesCtx.lineWidth = 2 / _holesScale;
-    holesCtx.beginPath(); holesCtx.moveTo(x - arm, y); holesCtx.lineTo(x + arm, y); holesCtx.stroke();
-    holesCtx.beginPath(); holesCtx.moveTo(x, y - arm); holesCtx.lineTo(x, y + arm); holesCtx.stroke();
-    holesCtx.restore();
-  }
-
-  // Count label
-  const n = (_editedHoles || []).length;
-  const lbl = document.getElementById('holes-count-label');
-  if (lbl) lbl.textContent = n === 0 ? 'No holes marked' : `${n} hole(s)`;
-}
-
-function _holeNatCoords(e) {
-  const rect = holesCanvas.getBoundingClientRect();
-  const yOff = e.pointerType === 'touch' ? -55 * (holesCanvas.height / rect.height) : 0;
-  return {
-    x: (e.clientX - rect.left) * (holesCanvas.width  / (rect.width  || 1)),
-    y: (e.clientY - rect.top)  * (holesCanvas.height / (rect.height || 1)) + yOff,
+  const ring = (p, dashed) => {
+    const r = Math.max(holeRadiusPx(Calib.toMm(_cal, p).x, k, 0) * 1.7, 11 * k);
+    ctx.lineWidth = 2.5 * k;
+    ctx.setLineDash(dashed ? [4 * k, 4 * k] : []);
+    ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath(); ctx.arc(p.x, p.y, r + 1.5 * k, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = 'rgba(50,255,100,0.95)';
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.stroke();
+    ctx.setLineDash([]);
+    // the exact marked point
+    ctx.fillStyle = 'rgba(50,255,100,0.95)';
+    ctx.beginPath(); ctx.arc(p.x, p.y, 1.6 * k, 0, Math.PI * 2); ctx.fill();
   };
+  _holes.forEach(h => ring(h, false));
+  if (panel.preview) { ctx.save(); ctx.globalAlpha = 0.7; ring(panel.preview, true); ctx.restore(); }
+
+  const n = _holes.length;
+  $('holes-count-label').textContent = n === 0 ? 'No holes marked' : `${n} hole(s)`;
 }
 
-holesCanvas.addEventListener('pointerdown', e => {
-  _holePtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (_holePtrs.size === 1) {
-    _holesTapStart = { x: e.clientX, y: e.clientY };
-  } else if (_holePtrs.size === 2) {
-    _holesTapStart = null; _holesPreviewPos = null;
-    const pts = [..._holePtrs.values()];
-    _pinchHoleDist0 = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
-    _pinchHoleZoom0 = _holesZoom;
-  }
-});
-
-holesCanvas.addEventListener('pointermove', e => {
-  _holePtrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (_holePtrs.size >= 2 && _pinchHoleDist0 !== null) {
-    const pts = [..._holePtrs.values()];
-    const panelRect = document.getElementById('holes-panel').getBoundingClientRect();
-    const focalPt = { x: (pts[0].x + pts[1].x) / 2 - panelRect.left, y: (pts[0].y + pts[1].y) / 2 - panelRect.top };
-    setHolesZoom(_pinchHoleZoom0 * Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y) / _pinchHoleDist0, focalPt);
-    return;
-  }
-  if (_holePtrs.size === 1 && _holesTapStart && _rectifiedImageEl) {
-    _holesPreviewPos = _holeNatCoords(e);
-    if (!_previewRafId) _previewRafId = requestAnimationFrame(() => { _previewRafId = null; drawHolesCanvas(); });
-  }
-});
-
-holesCanvas.addEventListener('pointerup', e => {
-  const wasSingle = _holePtrs.size === 1 && _holesTapStart !== null;
-  const tapStart  = _holesTapStart;
-  _holePtrs.delete(e.pointerId);
-  _holesPreviewPos = null;
-  if (_holePtrs.size < 2) { _pinchHoleDist0 = null; _pinchHoleZoom0 = null; }
-  if (_holePtrs.size === 0) _holesTapStart = null;
-
-  if (!wasSingle || !tapStart || !_rectifiedImageEl) { drawHolesCanvas(); return; }
-  if (e.pointerType !== 'touch' && Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) >= 10) { drawHolesCanvas(); return; }
-
-  const { x: natX, y: natY } = _holeNatCoords(e);
-  if (_editedHoles === null) _editedHoles = [];
-  const threshold = 20 / _holesScale;
-  const idx = _editedHoles.findIndex(h => Math.hypot(h.x_px - natX, h.y_px - natY) < threshold);
-  if (idx >= 0) {
-    _editedHoles.splice(idx, 1);
-  } else {
-    _editedHoles.push({ x_px: Math.round(natX), y_px: Math.round(natY), radius_px: 5, confidence: 1.0, source: 'manual' });
-  }
-  drawHolesCanvas();
-});
-
-holesCanvas.addEventListener('pointercancel', e => {
-  _holePtrs.delete(e.pointerId); _holesTapStart = null; _holesPreviewPos = null;
-  if (_holePtrs.size < 2) { _pinchHoleDist0 = null; _pinchHoleZoom0 = null; }
-  drawHolesCanvas();
-});
-
-function clearAllHoles() {
-  _editedHoles = [];
-  drawHolesCanvas();
+function onHoleTap(pos, panel) {
+  // Tapping on a mark removes it. "On" is measured on the ski, not on the screen: at most
+  // 4 mm, i.e. the hole itself. Holes from two old mounts can sit 5 mm apart, and a wider
+  // reach would silently delete one while marking the other — a missing hole is the one
+  // error that turns a real conflict into "OK". Zoom in, or use Undo, to remove a mark.
+  const pxPerMm = Calib.pxPerMm(_cal, Calib.toMm(_cal, pos).x);
+  const reachMm = clamp(10 / panel.scale / pxPerMm, 2.5, 4);
+  const reachPx = reachMm * pxPerMm;
+  let best = -1, bestD = reachPx;
+  _holes.forEach((h, i) => {
+    const d = Math.hypot(h.x - pos.x, h.y - pos.y);
+    if (d < bestD) { bestD = d; best = i; }
+  });
+  if (best >= 0) _holes.splice(best, 1);
+  else _holes.push({ x: pos.x, y: pos.y });
 }
 
-function backToCalibration() {
-  if (_editedHoles && _editedHoles.length > 0) {
-    if (!confirm('Going back will clear all hole marks. Continue?')) return;
-  }
-  _editedHoles       = [];
-  _rectifiedImageEl  = null;
-  _rectifiedBlob     = null;
-  _calibration       = null;
-  showStep(1);
+$('btn-clear-holes').addEventListener('click', () => {
+  if (_holes.length > 3 && !confirm(`Remove all ${_holes.length} hole marks?`)) return;
+  _holes = []; holesPanel.redraw();
+});
+$('btn-undo-hole').addEventListener('click', () => { _holes.pop(); holesPanel.redraw(); });
+$('btn-back-cal').addEventListener('click', () => showStep(1));
+
+
+// ── Step 2 → 3: analysis ─────────────────────────────────────────────────
+function readParams() {
+  const bsl = parseFloat($('bsl-input').value);
+  const minSep = parseFloat($('sep-input').value);
+  if (!(bsl >= 200 && bsl <= 420)) throw new Error('Enter a boot sole length between 200 and 420 mm.');
+  if (!(minSep >= 0 && minSep <= 50)) throw new Error('Enter a minimum hole separation between 0 and 50 mm.');
+  return { bsl, minSep, category: $('cat-select').value };
 }
 
-// (resize handled above)
-
-
-// ── Step 2: Analyze action ───────────────────────────────────────────────
-async function doAnalyze() {
-  if (!_rectifiedBlob || !_calibration) { showError('Complete calibration first.'); return; }
-
-  const cal = _calibration;
+$('analyze-btn').addEventListener('click', () => {
+  if (!_cal) { showError('Complete calibration first.'); return; }
+  if (!_db)  { showError('Binding templates are not loaded.'); return; }
+  let p;
+  try { p = readParams(); } catch (err) { showError(err.message); return; }
   clearError();
-  setLoading(true, 'Analyzing…');
 
-  const fd = new FormData();
-  fd.append('image', _rectifiedBlob, 'ski_rectified.jpg');
-  fd.append('bsl_mm',              document.getElementById('bsl-input').value);
-  fd.append('category',            document.getElementById('cat-select').value);
-  fd.append('min_separation_mm',   document.getElementById('sep-input').value);
-  fd.append('top_n',               999);
-  fd.append('bsl_test_step',       0);
-  fd.append('bsl_test_range',      0);
-  fd.append('mm_per_pixel',        cal.mm_per_pixel);
-  fd.append('mounting_point_x_px', cal.mounting_point_x_px);
-  fd.append('mounting_point_y_px', cal.ski_centerline_y_px);
-  fd.append('axis_dx',             cal.axis_dx);
-  fd.append('axis_dy',             cal.axis_dy);
-  fd.append('override_holes_json', JSON.stringify(_editedHoles || []));
+  _existing = _holes.map(h => Calib.toMm(_cal, h));
+  _results = Matcher.rankBindings(_db, p.bsl, _existing, { minSep: p.minSep, category: p.category });
+  _identified = null; _identShown = null; _clearCache = null;
+  renderIdentify();
+  showStep(3);
+  renderResults(p);
+});
 
-  try {
-    const resp = await fetch('/api/analyze', { method: 'POST', body: fd });
-    if (!resp.ok) throw new Error(`Server error ${resp.status}: ${await resp.text()}`);
-    _lastResp = await resp.json();
-    renderResults(_lastResp);
-  } catch (err) {
-    showError(err.message || 'Analysis failed.');
-  } finally {
-    setLoading(false);
-  }
+function statusBadge(r) {
+  if (!r.mountable) return '<span class="badge badge-err">CONFLICT</span>';
+  if (r.tight) return '<span class="badge badge-warn" title="Mountable, but within 2 mm of your limit">TIGHT</span>';
+  return '<span class="badge badge-ok">OK</span>';
 }
 
-
-// ── Step 3: Render results ───────────────────────────────────────────────
-function renderResults(data) {
-  showStep(3);
-
-  // Overlay image
-  const overlayImg       = document.getElementById('overlay-img');
-  const overlayContainer = document.getElementById('overlay-img-container');
-  const previewCvs       = document.getElementById('preview-canvas');
-
-  if (data.output_image_base64) {
-    overlayImg.src = 'data:image/jpeg;base64,' + data.output_image_base64;
-    overlayContainer.style.display = 'block';
-    previewCvs.style.display = 'none';
-  } else {
-    overlayContainer.style.display = 'none';
-    previewCvs.style.display = 'block';
-  }
-
-  // Hole count caption
-  document.getElementById('hole-count').textContent =
-    `${data.detected_holes} hole(s) marked · scale ${data.calibration.mm_per_pixel?.toFixed(4)} mm/px`;
-
-  // Results table
-  const tableCard = document.getElementById('results-table-card');
-  const tbody     = document.getElementById('results-body');
+function renderResults(p) {
+  $('hole-count').textContent = `${_existing.length} existing hole(s) · scale ${_cal.mmPerPx.toFixed(4)} mm/px`;
+  const tbody = $('results-body');
   tbody.innerHTML = '';
+  $('results-table-card').style.display = 'block';
 
-  if (!data.mounting_point_known || !data.results || data.results.length === 0) {
-    tableCard.style.display = data.mounting_point_known ? 'block' : 'none';
-    if (data.mounting_point_known && data.results.length === 0) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = '<td colspan="7" style="text-align:center;color:var(--text-dim)">No compatible bindings found for this BSL.</td>';
-      tbody.appendChild(tr);
-      tableCard.style.display = 'block';
-    }
+  const skipped = _db.bindings.filter(b =>
+    (p.category === 'all' || b.category === p.category) && !Matcher.bslInRange(b, p.bsl));
+
+  if (!_results.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="table-note">No binding in the database supports this boot sole length.</td></tr>';
+    _sel = null; _view = null;
+    $('overlay-controls-card').style.display = 'none';
+    renderSummary();
+    resPanel.redraw();
     return;
   }
 
-  tableCard.style.display = 'block';
-  document.getElementById('img-binding-label').textContent = `— ${data.results[0].binding_name}`;
-  const enteredBsl = parseFloat(document.getElementById('bsl-input').value) || 0;
-
-  data.results.forEach((r, idx) => {
+  for (const r of _results) {
     const tr = document.createElement('tr');
-    tr.className = r.is_mountable ? 'mountable' : '';
-    if (idx === 0) tr.classList.add('selected');
-
-    const heelOff    = r.heel_offset_mm !== 0 ? `${r.heel_offset_mm > 0 ? '+' : ''}${r.heel_offset_mm.toFixed(1)}mm` : '—';
-    const statusBadge = r.is_mountable
-      ? '<span class="badge badge-ok">OK</span>'
-      : '<span class="badge badge-err">CONFLICT</span>';
+    tr.dataset.id = r.bindingId;
+    const heel = r.heelOffset !== 0 ? `${signed(r.heelOffset)} mm` : '—';
+    const clearance = r.minClearance == null ? '—' : `${r.minClearance.toFixed(1)} mm`;
     const unverified = r.verified ? '' : ' <span class="badge badge-warn" title="Unverified template">⚠</span>';
-    const varLabel   = r.variant_id ? ` <small style="color:var(--text-dim)">[${r.variant_id}]</small>` : '';
-    const bslDiff    = r.bsl_mm - enteredBsl;
-    const bslStyle   = bslDiff !== 0 ? 'font-weight:bold;color:var(--accent)' : 'color:var(--text-dim)';
-    const bslLabel   = bslDiff === 0 ? `${r.bsl_mm}`
-      : `${r.bsl_mm} <small style="font-weight:normal">(${bslDiff > 0 ? '+' : ''}${bslDiff})</small>`;
-
     tr.innerHTML = `
-      <td>${r.binding_name}${varLabel}${unverified}</td>
-      <td style="${bslStyle};font-size:0.85rem">${bslLabel}</td>
-      <td>${r.n_new_holes}</td>
-      <td>${r.n_reusable}</td>
-      <td>${r.n_conflicts}</td>
-      <td style="font-size:0.8rem">${heelOff}</td>
-      <td>${statusBadge}</td>`;
-
-    tr.addEventListener('click', () => selectBinding(tr, r));
+      <td>${esc(r.bindingName)}${unverified}</td>
+      <td>${r.nNew}</td>
+      <td>${r.nReusable}</td>
+      <td>${r.nConflicts}</td>
+      <td class="cell-dim">${heel}</td>
+      <td class="cell-dim">${clearance}</td>
+      <td>${statusBadge(r)}</td>`;
+    tr.addEventListener('click', () => selectBinding(r.bindingId));
     tbody.appendChild(tr);
-  });
-
-  // Auto-select first result
-  const firstTr = tbody.querySelector('tr');
-  if (firstTr) selectBinding(firstTr, data.results[0]);
-}
-
-
-// ── Step 3: Select binding row → init controls + visualize ───────────────
-function selectBinding(tr, result) {
-  document.querySelectorAll('#results-body tr').forEach(r => r.classList.remove('selected'));
-  tr.classList.add('selected');
-  document.getElementById('img-binding-label').textContent = `— ${result.binding_name}`;
-  if (!_lastResp?.mounting_point_known) return;
-
-  _selectedResult = result;
-
-  const cal = _lastResp.calibration;
-  const adx = cal.axis_dx ?? -1.0;
-  const ady = cal.axis_dy ??  0.0;
-  _overlayHolesMm = (_lastResp.holes_px || []).map(h => {
-    const vx = h.x_px - cal.mounting_point_x_px;
-    const vy = h.y_px - cal.ski_centerline_y_px;
-    return { x_abs: (adx * vx + ady * vy) * cal.mm_per_pixel, y_abs: (ady * vx - adx * vy) * cal.mm_per_pixel };
-  });
-  _overlayHolesPx = (_lastResp.holes_px || []).map(h => ({
-    x_px: h.x_px, y_px: h.y_px, radius_px: h.radius_px,
-  }));
-
-  const bslRange = result.bsl_range_mm;
-  const bslMin = bslRange ? bslRange[0] : Math.max(240, result.bsl_mm - 30);
-  const bslMax = bslRange ? bslRange[1] : Math.min(400, result.bsl_mm + 30);
-  _setSlider('ctrl-bsl', result.bsl_mm, bslMin, bslMax, 1);
-
-  const adjRange = result.adjustment_range_mm || 0;
-  const heelGroup = document.getElementById('ctrl-heel-group');
-  if (adjRange > 0) {
-    heelGroup.style.display = '';
-    _setSlider('ctrl-heel', result.heel_offset_mm || 0, -adjRange, adjRange, 0.5);
-  } else {
-    heelGroup.style.display = 'none';
   }
-  _setSlider('ctrl-mount', 0, -30, 30, 0.5);
-
-  document.getElementById('overlay-controls-card').style.display = '';
-  _scheduleReVisualize(0);
+  if (skipped.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'no-select';
+    tr.innerHTML = `<td colspan="7" class="table-note">Not shown — boot sole length out of range: ${esc(skipped.map(b => b.name).join(', '))}</td>`;
+    tbody.appendChild(tr);
+  }
+  selectBinding(_results[0].bindingId);
 }
 
-function _setSlider(id, value, min, max, step) {
-  const rng = document.getElementById(id);
-  const num = document.getElementById(id + '-num');
-  rng.min = min; rng.max = max; rng.step = step; rng.value = value;
-  num.min = min; num.max = max; num.step = step; num.value = value;
+
+// ── Step 3: selected binding ─────────────────────────────────────────────
+function setSlider(id, value, min, max, step) {
+  for (const el of [$(id), $(id + '-num')]) { el.min = min; el.max = max; el.step = step; el.value = value; }
 }
 
-['ctrl-bsl', 'ctrl-heel', 'ctrl-mount'].forEach(id => {
-  const rng = document.getElementById(id);
-  const num = document.getElementById(id + '-num');
-  if (!rng || !num) return;
-  rng.addEventListener('input', () => {
-    num.value = rng.value;
-    if (id === 'ctrl-mount') _drawOverlayCanvas();
-    _scheduleReVisualize(80);
-  });
-  num.addEventListener('input', () => {
-    rng.value = num.value;
-    if (id === 'ctrl-mount') _drawOverlayCanvas();
-    _scheduleReVisualize(80);
-  });
+function selectBinding(id) {
+  const binding = _db.bindings.find(b => b.id === id);
+  if (!binding) return;
+  document.querySelectorAll('#results-body tr').forEach(tr => tr.classList.toggle('selected', tr.dataset.id === id));
+  _sel = { binding, heelAuto: true };
+
+  const p = readParams();
+  const range = binding.bsl_range_mm;
+  setSlider('ctrl-bsl', p.bsl, range ? range[0] : 240, range ? range[1] : 400, 1);
+  const heelRange = (binding.heel_unit && binding.heel_unit.adjustment_range_mm) || 0;
+  $('ctrl-heel-group').style.display = heelRange > 0 ? '' : 'none';
+  setSlider('ctrl-heel', 0, -heelRange, heelRange, 0.5);
+  setSlider('ctrl-mount', 0, -30, 30, 0.5);
+  $('overlay-controls-card').style.display = '';
+  updateView();
+}
+
+for (const id of ['ctrl-bsl', 'ctrl-heel', 'ctrl-mount']) {
+  const rng = $(id), num = $(id + '-num');
+  const changed = from => {
+    (from === rng ? num : rng).value = from.value;
+    if (id === 'ctrl-heel' && _sel) _sel.heelAuto = false;
+    updateView();
+  };
+  rng.addEventListener('input', () => changed(rng));
+  num.addEventListener('input', () => changed(num));
+}
+$('btn-heel-auto').addEventListener('click', () => { if (_sel) { _sel.heelAuto = true; updateView(); } });
+
+function updateView() {
+  if (!_sel) return;
+  const p = readParams();
+  const num = (id, fallback) => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : fallback; };
+  const bsl = num('ctrl-bsl', p.bsl);
+  const mountX = clamp(num('ctrl-mount', 0), -30, 30);
+  try {
+    _view = Matcher.checkBinding(_sel.binding, bsl, _existing, {
+      minSep: p.minSep, mountX,
+      heelOffset: _sel.heelAuto ? null : num('ctrl-heel', 0),
+    });
+  } catch (err) {
+    _view = null;
+    $('sum-name').textContent = _sel.binding.name;
+    $('sum-status').innerHTML = `<span class="badge badge-warn">${esc(err.message)}</span>`;
+    $('sum-legend').innerHTML = $('sum-detail').innerHTML = '';
+    $('sum-hint').style.display = 'none';
+    resPanel.redraw();
+    return;
+  }
+  if (_sel.heelAuto) { $('ctrl-heel').value = $('ctrl-heel-num').value = _view.heelOffset; }
+  $('btn-heel-auto').classList.toggle('active', _sel.heelAuto);
+  renderSummary();
+  resPanel.redraw();
+}
+
+const holeName = h => (h.label || '').replace(/^(front|heel)_/, '').replace(/_/g, ' ');
+const unitName = h => (h.unit === 'front' ? 'toe' : 'heel');
+
+function renderSummary() {
+  const v = _view;
+  if (!v) {
+    $('sum-name').textContent = 'No binding selected';
+    $('sum-status').innerHTML = $('sum-legend').innerHTML = $('sum-detail').innerHTML = '';
+    $('sum-hint').style.display = 'none';
+    return;
+  }
+  const p = readParams();
+  $('sum-name').textContent = v.bindingName;
+  $('sum-status').innerHTML = statusBadge(v) + ` <span class="sum-sub">boot sole ${v.bslMm} mm${v.mountX ? ` · mounted ${signed(v.mountX)} mm from the mark` : ''}</span>`;
+
+  const sw = (cls, text) => `<span class="legend-item"><span class="swatch ${cls}"></span>${text}</span>`;
+  $('sum-legend').innerHTML =
+    sw('sw-existing', `${_existing.length} existing`) +
+    sw('sw-reusable', `${v.nReusable} reused`) +
+    sw('sw-new', `${v.nNew} to drill`) +
+    sw('sw-conflict', `${v.nConflicts} conflict${v.nConflicts === 1 ? '' : 's'}`);
+
+  const lines = [];
+  for (const h of v.holes.filter(h => h.status === 'conflict')) {
+    lines.push(`<div class="d-err">✕ ${unitName(h)}, ${esc(holeName(h))}: ${h.distance.toFixed(1)} mm from an existing hole (limit ${p.minSep} mm)</div>`);
+  }
+  if (v.mountable && v.minClearance != null) {
+    lines.push(`<div>Closest hole to drill is ${v.minClearance.toFixed(1)} mm from an existing hole (limit ${p.minSep} mm).</div>`);
+    if (v.tight) lines.push('<div class="d-warn">⚠ That is within 2 mm of your limit — closer than a photo can measure. Check with the printed 1:1 sheet.</div>');
+  }
+  if (!_existing.length) lines.push('<div>No existing holes marked — every hole is new.</div>');
+  const loose = v.holes.filter(h => h.status === 'reusable' && h.distance > Matcher.LOOSE_REUSE_MM);
+  if (loose.length) {
+    lines.push(`<div class="d-warn">⚠ ${loose.length} reused hole(s) are 1–2 mm off the template. If that offset is real rather than marking error, the hole cannot be reused — check on the ski.</div>`);
+  }
+  if (v.heelOffset) {
+    lines.push(`<div>Heel piece ${Math.abs(v.heelOffset).toFixed(1)} mm ${v.heelOffset > 0 ? 'forward' : 'back'} on its track (range ±${v.heelRange} mm)${_sel.heelAuto ? ', chosen automatically' : ''}.</div>`);
+  }
+  $('sum-detail').innerHTML = lines.join('');
+
+  // If it conflicts here: how far would the whole binding have to move?
+  const hint = $('sum-hint');
+  if (v.nConflicts > 0) {
+    const key = [v.bindingId, v.bslMm, p.minSep].join('|');
+    if (!_clearCache || _clearCache.key !== key) {
+      _clearCache = { key, result: Matcher.findClearMountOffset(_sel.binding, v.bslMm, _existing, { minSep: p.minSep }) };
+    }
+    const c = _clearCache.result;
+    hint.style.display = '';
+    if (c && Math.abs(c.mountX - v.mountX) > 1e-9) {
+      const where = c.mountX === 0 ? 'on the mount mark' : `${Math.abs(c.mountX).toFixed(1)} mm ${c.mountX > 0 ? 'forward of' : 'behind'} the mount mark`;
+      hint.innerHTML = `Nearest conflict-free position: ${where}` +
+        (c.heelOffset ? `, heel ${signed(c.heelOffset)} mm` : '') +
+        ` <button class="btn-sm" id="btn-apply-clear">Show</button>`;
+      $('btn-apply-clear').addEventListener('click', () => {
+        _sel.heelAuto = true;
+        $('ctrl-mount').value = $('ctrl-mount-num').value = c.mountX;
+        updateView();
+      });
+    } else if (c) {
+      hint.textContent = 'The heel track alone can clear this — switch the heel offset back to auto.';
+    } else {
+      hint.textContent = 'No conflict-free position within ±30 mm of the mount mark, even using the heel track.';
+    }
+  } else {
+    hint.style.display = 'none';
+  }
+}
+
+function drawResCanvas(ctx, k) {
+  drawImage(ctx);
+  if (!_cal) return;
+  if (_gridEnabled) drawGrid(ctx, k);
+
+  // Centreline
+  const ext = Math.hypot(_imgW, _imgH);
+  ctx.strokeStyle = 'rgba(0,220,220,0.65)'; ctx.lineWidth = 2 * k;
+  line(ctx,
+    { x: _cal.mount.x - _cal.axis.dx * ext, y: _cal.mount.y - _cal.axis.dy * ext },
+    { x: _cal.mount.x + _cal.axis.dx * ext, y: _cal.mount.y + _cal.axis.dy * ext });
+
+  const disc = (mm, fill, minPx) => {
+    const p = Calib.toPx(_cal, mm), r = holeRadiusPx(mm.x, k, minPx);
+    ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5 * k; ctx.stroke();
+    return { p, r };
+  };
+
+  _existing.forEach(e => disc(e, '#ffffff', 4.5));
+
+  if (_identShown) {
+    ctx.strokeStyle = '#00e5ff'; ctx.lineWidth = 2.5 * k;
+    ctx.setLineDash([5 * k, 4 * k]);
+    for (const h of _identShown.holes) {
+      const p = Calib.toPx(_cal, h), r = holeRadiusPx(h.x, k, 4.5) * 2.2;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  if (_view) {
+    const colour = { reusable: '#32cd32', new: '#ffa500', conflict: '#dc143c' };
+    for (const h of _view.holes) {
+      const { p, r } = disc(h, colour[h.status], 5.5);
+      if (h.status === 'conflict') {
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 2 * k;
+        line(ctx, { x: p.x - r, y: p.y - r }, { x: p.x + r, y: p.y + r });
+        line(ctx, { x: p.x + r, y: p.y - r }, { x: p.x - r, y: p.y + r });
+      }
+    }
+  }
+
+  // Yellow cross: the ski's mount mark. White cross: where the boot centre sits when offset.
+  drawCross(ctx, _cal.mount.x, _cal.mount.y, 16 * k, 3 * k, '#ffd700', 'rgba(0,0,0,0.6)');
+  if (_view && Math.abs(_view.mountX) >= 0.1) {
+    const p = Calib.toPx(_cal, { x: _view.mountX, y: 0 });
+    drawCross(ctx, p.x, p.y, 13 * k, 3 * k, '#ffffff', '#000000');
+  }
+}
+
+$('btn-edit-holes').addEventListener('click', () => showStep(2));
+
+
+// ── Step 3: previously mounted binding ───────────────────────────────────
+$('btn-identify').addEventListener('click', () => {
+  if (!_db || !_cal) return;
+  _identified = Matcher.identify(_db, _existing);
+  _identShown = _identified.full[0] || null;
+  renderIdentify();
+  resPanel.redraw();
 });
 
-function _scheduleReVisualize(delayMs) {
-  clearTimeout(_reVisTimer);
-  _reVisTimer = setTimeout(_reVisualize, delayMs);
-}
+function renderIdentify() {
+  const body = $('identify-body');
+  if (!_identified) {
+    body.innerHTML = '<p class="ident-note">Compares the marked holes with every template to find the binding that made them, the boot sole length it was set for, and where it sat.</p>';
+    return;
+  }
+  const { full, partial } = _identified;
+  if (_existing.length < 3) {
+    body.innerHTML = '<p class="ident-note">Mark the existing holes first — a pattern needs at least three.</p>';
+    return;
+  }
+  if (!full.length && !partial.length) {
+    body.innerHTML = `<p class="ident-note">No known pattern in these holes. The old binding may not be among the ${_db.bindings.length} templates, or a hole is missing or misplaced.</p>`;
+    return;
+  }
 
-async function _reVisualize() {
-  if (!_selectedResult || !_lastResp || !_rectifiedBlob) return;
-  const cal = _lastResp.calibration;
+  const fit = rms => `fit ±${rms.toFixed(1)} mm`;
+  const where = x => Math.abs(x) < 1 ? 'on your mount mark' : `${Math.abs(x).toFixed(1)} mm ${x > 0 ? 'forward of' : 'behind'} your mount mark`;
+  const rows = [];
 
-  const bsl        = parseFloat(document.getElementById('ctrl-bsl').value)   || _selectedResult.bsl_mm;
-  const heelOffset = parseFloat(document.getElementById('ctrl-heel').value)  || 0;
-  const mountOff   = parseFloat(document.getElementById('ctrl-mount').value) || 0;
-
-  const fd = new FormData();
-  fd.append('image',                  _rectifiedBlob, 'ski_rectified.jpg');
-  fd.append('binding_id',             _selectedResult.binding_id);
-  fd.append('bsl_mm',                 bsl);
-  fd.append('variant_id',             _selectedResult.variant_id || '');
-  fd.append('min_separation_mm',      document.getElementById('sep-input').value);
-  fd.append('existing_holes_json',    JSON.stringify(_overlayHolesMm));
-  fd.append('existing_holes_px_json', JSON.stringify(_overlayHolesPx));
-  fd.append('mm_per_pixel',           cal.mm_per_pixel);
-  fd.append('mounting_point_x_px',    cal.mounting_point_x_px);
-  fd.append('mounting_point_y_px',    cal.ski_centerline_y_px);
-  fd.append('axis_dx',                cal.axis_dx ?? -1.0);
-  fd.append('axis_dy',                cal.axis_dy ??  0.0);
-  fd.append('heel_offset_mm',         heelOffset);
-  fd.append('mount_offset_mm',        mountOff);
-
-  try {
-    const resp = await fetch('/api/visualize', { method: 'POST', body: fd });
-    if (!resp.ok) return;
-    const data = await resp.json();
-    if (data.output_image_base64) {
-      document.getElementById('overlay-img').src = 'data:image/jpeg;base64,' + data.output_image_base64;
-      document.getElementById('overlay-img-container').style.display = 'block';
-      document.getElementById('preview-canvas').style.display = 'none';
-      _drawOverlayCanvas();
+  if (full.length) {
+    const best = full[0];
+    rows.push(best.rms <= 1
+      ? `<p class="ident-verdict ok">✓ The holes match a known pattern to within ${Math.max(best.rms, 0.1).toFixed(1)} mm, so your scale and axis look right.</p>`
+      : `<p class="ident-verdict warn">⚠ A pattern is recognisable but only loosely (±${best.rms.toFixed(1)} mm): the calibration or some hole marks are a little off.</p>`);
+  }
+  full.forEach((m, i) => {
+    const lines = [`all ${m.matched} holes · ${fit(m.rms)}`];
+    if (m.bslEst != null) {
+      lines.push(`boot sole ≈ ${m.bslEst.toFixed(0)} mm${m.heelRange ? ` (±${m.heelRange} mm, depending on where the heel sat on its track)` : ''}`);
     }
-  } catch (_) {}
-}
-
-
-// ── Overlay canvas (step 3 crosses + grid) ───────────────────────────────
-function _drawOverlayCanvas() {
-  if (!_selectedResult || !_lastResp || !_rectifiedImageEl) return;
-  const container = document.getElementById('overlay-img-container');
-  if (!container || container.style.display === 'none') return;
-
-  const canvas = document.getElementById('overlay-canvas');
-  const cal    = _lastResp.calibration;
-  const natW   = _rectifiedImageEl.naturalWidth;
-  const natH   = _rectifiedImageEl.naturalHeight;
-  canvas.width  = natW;
-  canvas.height = natH;
-
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, natW, natH);
-
-  const mpx = cal.mounting_point_x_px;
-  const mpy = cal.ski_centerline_y_px;
-  const adx = cal.axis_dx ?? -1.0;
-  const ady = cal.axis_dy ??  0.0;
-  const mpp = cal.mm_per_pixel;
-
-  const mountOff = parseFloat(document.getElementById('ctrl-mount').value) || 0;
-  const offPx    = mountOff / mpp;
-  const offX     = mpx + offPx * adx;
-  const offY     = mpy + offPx * ady;
-
-  const armPx = Math.max(20, natW * 0.014);
-  const lw    = Math.max(2,  natW * 0.0018);
-
-  if (_gridEnabled) _drawGrid(ctx, natW, natH, mpx, mpy, adx, ady, mpp);
-
-  // Fixed yellow cross at original calibration mount point
-  _drawCross(ctx, mpx, mpy, armPx, lw, '#ffd700', null);
-
-  // Moving white/black cross at offset position (only when offset is non-zero)
-  if (Math.abs(mountOff) >= 0.1) {
-    _drawCross(ctx, offX, offY, armPx * 0.85, lw, '#ffffff', '#000000');
-  }
-}
-
-function _drawCross(ctx, x, y, arm, lw, color, borderColor) {
-  ctx.lineCap = 'round';
-  if (borderColor) {
-    ctx.strokeStyle = borderColor;
-    ctx.lineWidth   = lw * 3.5;
-    ctx.beginPath(); ctx.moveTo(x - arm, y); ctx.lineTo(x + arm, y); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x, y - arm); ctx.lineTo(x, y + arm); ctx.stroke();
-  }
-  ctx.strokeStyle = color;
-  ctx.lineWidth   = lw;
-  ctx.beginPath(); ctx.moveTo(x - arm, y); ctx.lineTo(x + arm, y); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(x, y - arm); ctx.lineTo(x, y + arm); ctx.stroke();
-}
-
-function _drawGrid(ctx, natW, natH, mpx, mpy, adx, ady, mpp) {
-  const spacingPx = _gridSpacingMm / mpp;
-  const pdx = -ady;
-  const pdy =  adx;
-  const diagLen = Math.hypot(natW, natH) + spacingPx * 2;
-  const nLines  = Math.ceil(diagLen / spacingPx) + 1;
-  const lw = Math.max(1, natW * 0.0008);
-
-  ctx.save();
-  ctx.lineWidth = lw;
-  ctx.setLineDash([natW * 0.004, natW * 0.004]);
-
-  for (let i = -nLines; i <= nLines; i++) {
-    ctx.strokeStyle = i === 0 ? 'rgba(255,255,100,0.45)' : 'rgba(255,255,255,0.18)';
-    // Lines parallel to axis at lateral offset i * spacingPx
-    const ox1 = mpx + i * spacingPx * pdx, oy1 = mpy + i * spacingPx * pdy;
-    ctx.beginPath();
-    ctx.moveTo(ox1 - adx * diagLen, oy1 - ady * diagLen);
-    ctx.lineTo(ox1 + adx * diagLen, oy1 + ady * diagLen);
-    ctx.stroke();
-    // Lines perpendicular to axis at along-axis offset i * spacingPx
-    const ox2 = mpx + i * spacingPx * adx, oy2 = mpy + i * spacingPx * ady;
-    ctx.beginPath();
-    ctx.moveTo(ox2 - pdx * diagLen, oy2 - pdy * diagLen);
-    ctx.lineTo(ox2 + pdx * diagLen, oy2 + pdy * diagLen);
-    ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function toggleGrid() {
-  _gridEnabled = !_gridEnabled;
-  document.querySelectorAll('.btn-grid-toggle').forEach(btn => {
-    btn.textContent = _gridEnabled ? 'Grid on' : 'Grid off';
-    btn.classList.toggle('active', _gridEnabled);
+    lines.push(`centred ${where(m.mountOffset)}`);
+    if (Math.abs(m.lateralOffset) > 1.5) lines.push(`${Math.abs(m.lateralOffset).toFixed(1)} mm off your centreline`);
+    rows.push(`<div class="ident-row${_identShown === m ? ' shown' : ''}" data-kind="full" data-i="${i}">
+      <strong>${esc(m.bindingName)}</strong><span>${lines.map(esc).join(' · ')}</span></div>`);
   });
-  drawHolesCanvas();
-  _drawOverlayCanvas();
-}
-
-function setGridSpacing(mm) {
-  _gridSpacingMm = mm;
-  document.querySelectorAll('.btn-grid-1cm').forEach(btn => btn.classList.toggle('active', mm === 10));
-  document.querySelectorAll('.btn-grid-5mm').forEach(btn => btn.classList.toggle('active', mm === 5));
-  drawHolesCanvas();
-  _drawOverlayCanvas();
-}
-
-
-// ── Zoom ─────────────────────────────────────────────────────────────────
-function _updateZoomLabel(id, zoom) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = Math.round(zoom * 100) + '%';
-}
-
-function setCalZoom(level, focalPt) {
-  const panel = document.getElementById('cal-panel');
-  const oldZoom = _calZoom;
-  const baseW = oldZoom > 1.0 ? parseFloat(calCanvas.style.width) / oldZoom : calCanvas.offsetWidth;
-  _calZoom = Math.max(1.0, Math.min(8.0, level));
-  calCanvas.style.width = _calZoom > 1.0 ? (baseW * _calZoom) + 'px' : '';
-  _updateZoomLabel('cal-zoom-label', _calZoom);
-  if (focalPt && oldZoom !== _calZoom) {
-    const r = _calZoom / oldZoom;
-    panel.scrollLeft = (panel.scrollLeft + focalPt.x) * r - focalPt.x;
-    panel.scrollTop  = (panel.scrollTop  + focalPt.y) * r - focalPt.y;
+  if (partial.length) {
+    rows.push(`<p class="ident-note">${full.length ? 'Other partial matches' : 'Only one unit of a known pattern was found'}:</p>`);
+    partial.forEach((m, i) => {
+      const names = [m.bindingName, ...m.alsoFits].map(esc).join(' / ');
+      rows.push(`<div class="ident-row${_identShown === m ? ' shown' : ''}" data-kind="partial" data-i="${i}">
+        <strong>${names}</strong><span>${m.kind} piece only (${m.matched} holes) · ${fit(m.rms)}</span></div>`);
+    });
   }
-  if (_imageEl) drawCalCanvas();
+  rows.push('<p class="ident-note">Tap a match to outline it on the photo (dashed cyan).</p>');
+  body.innerHTML = rows.join('');
+  body.querySelectorAll('.ident-row').forEach(el => el.addEventListener('click', () => {
+    const m = _identified[el.dataset.kind][Number(el.dataset.i)];
+    _identShown = _identShown === m ? null : m;
+    renderIdentify();
+    resPanel.redraw();
+  }));
 }
 
-function setHolesZoom(level, focalPt) {
-  const panel = document.getElementById('holes-panel');
-  const oldZoom = _holesZoom;
-  const baseW = oldZoom > 1.0 ? parseFloat(holesCanvas.style.width) / oldZoom : holesCanvas.offsetWidth;
-  _holesZoom = Math.max(1.0, Math.min(8.0, level));
-  holesCanvas.style.width = _holesZoom > 1.0 ? (baseW * _holesZoom) + 'px' : '';
-  _updateZoomLabel('holes-zoom-label', _holesZoom);
-  if (focalPt && oldZoom !== _holesZoom) {
-    const r = _holesZoom / oldZoom;
-    panel.scrollLeft = (panel.scrollLeft + focalPt.x) * r - focalPt.x;
-    panel.scrollTop  = (panel.scrollTop  + focalPt.y) * r - focalPt.y;
-  }
-  if (_rectifiedImageEl) drawHolesCanvas();
-}
 
-function adjustZoom(which, dir) {
-  const factor = dir > 0 ? 1.3 : 1 / 1.3;
-  if (which === 'cal') setCalZoom(_calZoom * factor);
-  else setHolesZoom(_holesZoom * factor);
-}
-
-function resetZoom(which) {
-  if (which === 'cal') setCalZoom(1.0);
-  else setHolesZoom(1.0);
-}
-
-// Wheel zoom on canvas panels — zoom centred on cursor position
-document.getElementById('cal-panel').addEventListener('wheel', e => {
-  if (!_imageEl) return;
-  e.preventDefault();
-  const rect = document.getElementById('cal-panel').getBoundingClientRect();
-  const focalPt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  setCalZoom(_calZoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15), focalPt);
-}, { passive: false });
-
-document.getElementById('holes-panel').addEventListener('wheel', e => {
-  if (!_rectifiedImageEl) return;
-  e.preventDefault();
-  const rect = document.getElementById('holes-panel').getBoundingClientRect();
-  const focalPt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  setHolesZoom(_holesZoom * (e.deltaY < 0 ? 1.15 : 1 / 1.15), focalPt);
-}, { passive: false });
+// ── Step 3: printable 1:1 check sheet ────────────────────────────────────
+$('btn-print').addEventListener('click', () => {
+  if (!_view) { showError('Select a binding first.'); return; }
+  const p = readParams();
+  const sheet = PrintSheet.build({
+    bindingName: _view.bindingName, bslMm: _view.bslMm, heelOffset: _view.heelOffset, mountX: _view.mountX,
+    minSep: p.minSep, date: new Date().toISOString().slice(0, 10),
+    holes: _view.holes, existing: _existing, paper: $('paper-select').value,
+  });
+  let style = $('print-page-style');
+  if (!style) { style = document.createElement('style'); style.id = 'print-page-style'; document.head.appendChild(style); }
+  style.textContent = `@page { size: ${sheet.paper.w}mm ${sheet.paper.h}mm; margin: 0; }`;
+  $('print-root').innerHTML = sheet.pages
+    .map(svg => `<div class="print-page" style="width:${sheet.paper.w}mm;height:${sheet.paper.h}mm">${svg}</div>`).join('');
+  window.print();
+});
 
 
 // ── Step navigation ──────────────────────────────────────────────────────
-function updateStepNav(n) {
-  for (let i = 1; i <= 3; i++) {
-    const el = document.getElementById('snav-' + i);
-    el.classList.remove('active', 'done');
-    if (i < n)      el.classList.add('done');
-    else if (i === n) el.classList.add('active');
-  }
-}
-
 function showStep(n) {
-  document.getElementById('step1').style.display = n === 1 ? '' : 'none';
-  document.getElementById('step2').style.display = n === 2 ? '' : 'none';
-  document.getElementById('step3').style.display = n === 3 ? '' : 'none';
-  updateStepNav(n);
-  if (n === 1) drawCalCanvas();
-  if (n === 2) drawHolesCanvas();
+  for (let i = 1; i <= 3; i++) {
+    $('step' + i).style.display = i === n ? '' : 'none';
+    const nav = $('snav-' + i);
+    nav.classList.toggle('done', i < n);
+    nav.classList.toggle('active', i === n);
+  }
+  PANELS[['cal', 'holes', 'res'][n - 1]].setZoom(1);
 }
 
-// Step nav click — done steps allow going back; active/future steps are non-interactive
-[1, 2, 3].forEach(n => {
-  document.getElementById('snav-' + n).addEventListener('click', () => {
-    const el = document.getElementById('snav-' + n);
-    if (el.classList.contains('done')) showStep(n);
-  });
-});
+[1, 2, 3].forEach(n => $('snav-' + n).addEventListener('click', () => {
+  if ($('snav-' + n).classList.contains('done')) showStep(n);
+}));
 
 
-// ── UI helpers ───────────────────────────────────────────────────────────
-function setLoading(on, msg) {
-  document.getElementById('loading').style.display = on ? 'block' : 'none';
-  if (msg) document.getElementById('loading-msg').textContent = msg;
-  const btn = document.getElementById('calibrate-btn');
-  if (btn) btn.disabled = on || !(_tapePoints.length >= 2 && _mpPoint);
-  const abtn = document.getElementById('analyze-btn');
-  if (abtn) abtn.disabled = on;
-}
+// ── Messages ─────────────────────────────────────────────────────────────
 function showError(msg) {
-  const el = document.getElementById('error-notice');
+  const el = $('error-notice');
   el.textContent = msg; el.style.display = 'block';
 }
-function clearError() { document.getElementById('error-notice').style.display = 'none'; }
+function clearError() { $('error-notice').style.display = 'none'; }

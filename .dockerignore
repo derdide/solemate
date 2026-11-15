@@ -1,0 +1,7 @@
+# The image copies index.html, static/ and templates/ explicitly; keep everything
+# else (secrets, VCS history, local clutter) out of the build context.
+*
+!Caddyfile
+!index.html
+!static
+!templates

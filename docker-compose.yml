@@ -2,25 +2,32 @@ services:
   ski-bindings:
     build: .
     ports:
+      # Published on every host interface. Note that Docker-published ports bypass
+      # ufw/firewalld rules. If your reverse proxy runs on this same host, prefer
+      #   - "127.0.0.1:8000:8000"
+      # so the app is only reachable through the proxy.
       - "8000:8000"
-    environment:
-      # Required: set a long random string as your access token
-      - APP_TOKEN=${APP_TOKEN}
-      # Optional: Ollama Vision fallback (local, no API key) — set URL to enable
-      # e.g. http://your-ollama-host:11434  or  http://host.docker.internal:11434
-      - OLLAMA_URL=${OLLAMA_URL:-}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-llava}
-      # Optional: Claude Vision API fallback (requires API key)
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-opus-4-6}
-      # Set to "false" to disable Claude API calls entirely
-      - USE_CLAUDE_FALLBACK=${USE_CLAUDE_FALLBACK:-true}
     volumes:
       # Mount templates directory so you can update binding_db.json without rebuilding
-      - ./templates:/app/templates:ro
+      - ./templates:/srv/templates:ro
+    # --- Containment: it only serves files, so it gets nothing else ---
+    read_only: true
+    tmpfs:
+      - /tmp:size=8m
+    environment:
+      - XDG_DATA_HOME=/tmp
+      - XDG_CONFIG_HOME=/tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    memswap_limit: 128m
+    pids_limit: 64
+    cpus: 1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8000/api/health"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3

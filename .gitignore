@@ -1,19 +1,6 @@
 # Secrets — never commit these
 .env
 
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-dist/
-build/
-.venv/
-venv/
-env/
-
 # Claude dev tools and internal notes (local only)
 .claude/
 RESUME.md
@@ -27,3 +14,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Node
+node_modules/

@@ -1,0 +1,9 @@
+{
+  "name": "solemate",
+  "private": true,
+  "description": "Ski binding hole conflict detector — static web app, no dependencies",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python3 -m http.server 8765 --bind 127.0.0.1"
+  }
+}

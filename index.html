@@ -3,13 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Everything runs in the browser: no uploads, no API. The policy below lets the page
+       load only its own files and talk to nothing but its own origin. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; img-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+  <meta name="referrer" content="no-referrer" />
   <title>Ski Binding Conflict Detector</title>
-  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="static/style.css" />
 </head>
 <body>
 
 <header class="app-header">
   <h1>🎿 Ski Binding Conflict Detector</h1>
+  <span class="subtitle">Your photo stays on this device — nothing is uploaded.</span>
 </header>
 
 <nav class="step-nav" id="step-nav">
@@ -29,37 +35,34 @@
   </div>
 </nav>
 
-<div id="loading"><div class="spinner"></div><p id="loading-msg">Working…</p></div>
-<div id="error-notice" style="max-width:1200px;margin:0 auto;padding:0 1.5rem"></div>
+<div id="error-notice" class="page-notice"></div>
 
 
 <!-- ═══ STEP 1 — Photo & Calibration ═══════════════════════════════════ -->
 <div id="step1" class="step-container">
   <div class="step-layout">
 
-    <!-- ── Canvas column ── -->
     <div class="step-canvas-col">
       <div class="canvas-panel" id="cal-panel">
         <canvas id="cal-canvas"></canvas>
       </div>
       <div class="zoom-bar">
-        <button class="btn-sm zoom-btn" onclick="adjustZoom('cal',-1)" title="Zoom out">−</button>
+        <button class="btn-sm zoom-btn" data-zoom="cal" data-dir="-1" title="Zoom out">−</button>
         <span class="zoom-label" id="cal-zoom-label">100%</span>
-        <button class="btn-sm zoom-btn" onclick="adjustZoom('cal',1)" title="Zoom in">+</button>
-        <button class="btn-sm zoom-btn" onclick="resetZoom('cal')" title="Fit to window">⤢</button>
-        <span class="zoom-hint">Scroll to zoom · drag to pan</span>
+        <button class="btn-sm zoom-btn" data-zoom="cal" data-dir="1" title="Zoom in">+</button>
+        <button class="btn-sm zoom-btn" data-zoom="cal" data-dir="0" title="Fit to window">⤢</button>
+        <span class="zoom-hint">Scroll or pinch to zoom · drag (two fingers on touch) to pan</span>
       </div>
       <div id="cal-mode-label" class="mode-label"></div>
       <div id="cal-status" class="cal-status-line"></div>
     </div>
 
-    <!-- ── Controls column ── -->
     <div class="step-controls-col">
       <div class="card settings-strip">
-        <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <div id="drop-zone">
           <div class="drop-icon">📷</div>
-          <p id="drop-label">Tap or click to upload a photo</p>
-          <p class="drop-hint">Ski laid flat · measuring tape alongside · good light</p>
+          <p id="drop-label">Tap or click to choose a photo</p>
+          <p class="drop-hint">Ski laid flat · tape lying <strong>on the ski</strong> · camera square above it</p>
           <input type="file" id="file-input" accept="image/*" style="display:none" />
         </div>
       </div>
@@ -68,15 +71,15 @@
         <div class="cal-toolbar">
           <div class="cal-left">
             <div style="display:flex;align-items:center;gap:0.4rem">
-              <label style="margin:0;white-space:nowrap;font-size:0.8rem">Mark spacing:</label>
+              <label for="ref-mm" style="margin:0;white-space:nowrap;font-size:0.8rem">Mark spacing:</label>
               <input type="number" id="ref-mm" value="100" min="10" max="500" step="10" style="width:68px" />
               <span style="font-size:0.75rem;color:var(--text-dim)">mm</span>
             </div>
-            <button class="btn-sm btn-required" id="btn-tape"   onclick="startCalMode('tape')"  >① Tape marks</button>
-            <button class="btn-sm btn-required" id="btn-mp"     onclick="startCalMode('mp')"    >② Mount point</button>
-            <button class="btn-sm"              id="btn-trans1" onclick="startCalMode('trans1')">③ Axis L1 <span class="btn-opt">(opt)</span></button>
-            <button class="btn-sm"              id="btn-trans2" onclick="startCalMode('trans2')">④ Axis L2 <span class="btn-opt">(opt)</span></button>
-            <button class="btn-sm"              id="btn-flip"   onclick="flipAxis()"            >↩ Flip axis</button>
+            <button class="btn-sm btn-required" id="btn-tape"   data-cal-mode="tape"  >① Tape marks</button>
+            <button class="btn-sm btn-required" id="btn-mp"     data-cal-mode="mp"    >② Mount point</button>
+            <button class="btn-sm"              id="btn-trans1" data-cal-mode="trans1">③ Axis L1 <span class="btn-opt">(opt)</span></button>
+            <button class="btn-sm"              id="btn-trans2" data-cal-mode="trans2">④ Axis L2 <span class="btn-opt">(opt)</span></button>
+            <button class="btn-sm"              id="btn-flip">↩ Flip axis</button>
           </div>
         </div>
 
@@ -89,12 +92,11 @@
           <span class="cal-guide-opt">Optional — edge→edge at heel zone, then tip zone, for a more precise axis.</span>
           <span class="cal-guide-num cal-guide-opt">↩</span>
           <span class="cal-guide-opt">Orange arrow should point toward the tip.</span>
+          <span class="cal-guide-num">!</span>
+          <span>Lay the tape <strong>on the topsheet</strong>, not on the bench next to the ski: a tape 15 mm lower than the holes skews every measurement by 2–4 mm.</span>
         </div>
 
-        <div id="cal-ok"     class="cal-ok"     style="display:none;margin-top:0.75rem"></div>
-        <div id="cal-notice" class="cal-notice" style="display:none;margin-top:0.75rem"></div>
-
-        <button class="btn-primary" id="calibrate-btn" onclick="doCalibrate()" disabled>
+        <button class="btn-primary" id="calibrate-btn" disabled>
           Calibrate →
         </button>
       </div>
@@ -108,43 +110,42 @@
 <div id="step2" class="step-container" style="display:none">
   <div class="step-layout">
 
-    <!-- ── Canvas column ── -->
     <div class="step-canvas-col">
       <div class="canvas-panel" id="holes-panel">
         <canvas id="holes-canvas"></canvas>
       </div>
       <div class="zoom-bar">
-        <button class="btn-sm zoom-btn" onclick="adjustZoom('holes',-1)" title="Zoom out">−</button>
+        <button class="btn-sm zoom-btn" data-zoom="holes" data-dir="-1" title="Zoom out">−</button>
         <span class="zoom-label" id="holes-zoom-label">100%</span>
-        <button class="btn-sm zoom-btn" onclick="adjustZoom('holes',1)" title="Zoom in">+</button>
-        <button class="btn-sm zoom-btn" onclick="resetZoom('holes')" title="Fit to window">⤢</button>
-        <span class="zoom-hint">Scroll to zoom · drag to pan</span>
+        <button class="btn-sm zoom-btn" data-zoom="holes" data-dir="1" title="Zoom in">+</button>
+        <button class="btn-sm zoom-btn" data-zoom="holes" data-dir="0" title="Fit to window">⤢</button>
+        <span class="zoom-hint">Scroll or pinch to zoom · drag (two fingers on touch) to pan</span>
       </div>
       <div id="holes-mode-label" class="mode-label">
-        Tap on the image to mark each existing drill hole · tap an existing circle to remove it
+        Tap each existing drill hole. To remove a mark, tap its centre (zoom in) or use Undo.
       </div>
     </div>
 
-    <!-- ── Controls column ── -->
     <div class="step-controls-col">
       <div class="card settings-strip">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
           <span id="cal-summary" style="font-size:0.85rem;color:var(--text-dim)"></span>
-          <button class="btn-sm" onclick="backToCalibration()">← Back to calibration</button>
+          <button class="btn-sm" id="btn-back-cal">← Back to calibration</button>
         </div>
+        <div id="cal-warning" class="cal-warning" style="display:none"></div>
       </div>
 
       <div class="card" style="margin-top:0.75rem">
         <div class="cal-toolbar">
           <div class="cal-left" style="flex-wrap:wrap;gap:0.45rem">
-            <button class="btn-sm" disabled style="opacity:0.4;cursor:not-allowed" title="Coming soon">🔍 Auto-detect</button>
-            <button class="btn-sm" onclick="clearAllHoles()">🗑 Clear all</button>
+            <button class="btn-sm" id="btn-undo-hole" title="Remove the last hole you marked">↶ Undo</button>
+            <button class="btn-sm" id="btn-clear-holes">🗑 Clear all</button>
             <span id="holes-count-label" style="font-size:0.78rem;color:var(--text-dim);align-self:center"></span>
             <span class="toolbar-sep" style="border-left:1px solid var(--border);height:1.2em;align-self:center;margin:0 0.2rem"></span>
             <label class="toolbar-label" style="margin:0;font-size:0.8rem;color:var(--text-dim);align-self:center">Grid:</label>
-            <button class="btn-sm btn-grid-toggle" onclick="toggleGrid()">Grid off</button>
-            <button class="btn-sm btn-grid-1cm active" onclick="setGridSpacing(10)">1 cm</button>
-            <button class="btn-sm btn-grid-5mm" onclick="setGridSpacing(5)">½ cm</button>
+            <button class="btn-sm btn-grid-toggle">Grid off</button>
+            <button class="btn-sm btn-grid-spacing active" data-mm="10">1 cm</button>
+            <button class="btn-sm btn-grid-spacing" data-mm="5">½ cm</button>
           </div>
         </div>
       </div>
@@ -154,7 +155,7 @@
           <div>
             <label for="bsl-input">Boot sole length</label>
             <div class="input-with-unit">
-              <input type="number" id="bsl-input" value="310" min="240" max="400" step="5" style="width:88px" />
+              <input type="number" id="bsl-input" value="310" min="240" max="400" step="1" style="width:88px" />
               <span style="font-size:0.75rem;color:var(--text-dim)">mm</span>
             </div>
           </div>
@@ -174,7 +175,7 @@
             </div>
           </div>
         </div>
-        <button class="btn-primary" id="analyze-btn" onclick="doAnalyze()">
+        <button class="btn-primary" id="analyze-btn">
           Analyze →
         </button>
       </div>
@@ -188,69 +189,95 @@
 <div id="step3" class="step-container" style="display:none">
   <div class="step-layout">
 
-    <!-- ── Image column ── -->
     <div class="step-canvas-col">
-      <div id="overlay-img-container" style="position:relative;display:none">
-        <img id="overlay-img" src="" alt="overlay" style="width:100%;border-radius:6px;border:1px solid var(--border);display:block" />
-        <canvas id="overlay-canvas" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;border-radius:6px"></canvas>
+      <div class="canvas-panel" id="res-panel">
+        <canvas id="res-canvas"></canvas>
       </div>
-      <canvas id="preview-canvas" style="width:100%;border-radius:6px;border:1px solid var(--border);display:none"></canvas>
+      <div class="zoom-bar">
+        <button class="btn-sm zoom-btn" data-zoom="res" data-dir="-1" title="Zoom out">−</button>
+        <span class="zoom-label" id="res-zoom-label">100%</span>
+        <button class="btn-sm zoom-btn" data-zoom="res" data-dir="1" title="Zoom in">+</button>
+        <button class="btn-sm zoom-btn" data-zoom="res" data-dir="0" title="Fit to window">⤢</button>
+        <span class="zoom-hint">Scroll or pinch to zoom · drag to pan</span>
+      </div>
       <p class="img-caption" id="hole-count"></p>
     </div>
 
-    <!-- ── Controls column ── -->
     <div class="step-controls-col">
-      <div class="card settings-strip" style="margin-bottom:0.75rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
-          <span id="img-binding-label" style="font-size:0.85rem;color:var(--text-dim)">Select a binding below</span>
-          <button class="btn-sm" onclick="showStep(2)">← Edit holes</button>
+      <!-- Selected binding: verdict -->
+      <div class="card" id="summary-card" style="margin-bottom:0.75rem">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem">
+          <div>
+            <div id="sum-name" class="sum-name">Select a binding below</div>
+            <div id="sum-status" style="margin-top:0.3rem"></div>
+          </div>
+          <button class="btn-sm" id="btn-edit-holes">← Edit holes</button>
         </div>
+        <div id="sum-legend" class="sum-legend"></div>
+        <div id="sum-detail" class="sum-detail"></div>
+        <div id="sum-hint" class="sum-hint" style="display:none"></div>
       </div>
 
+      <!-- Selected binding: position controls -->
       <div class="card overlay-controls-card" id="overlay-controls-card" style="display:none;margin-bottom:0.75rem">
         <div class="overlay-controls-row">
           <div class="ctrl-group">
-            <label class="ctrl-label">BSL</label>
+            <label class="ctrl-label" for="ctrl-bsl">BSL</label>
             <input type="range" id="ctrl-bsl" min="240" max="400" step="1">
             <input type="number" id="ctrl-bsl-num" min="240" max="400" step="1" style="width:64px">
             <span class="ctrl-unit">mm</span>
           </div>
           <div class="ctrl-group" id="ctrl-heel-group" style="display:none">
-            <label class="ctrl-label">Heel offset</label>
+            <label class="ctrl-label" for="ctrl-heel">Heel offset</label>
             <input type="range" id="ctrl-heel" min="-20" max="20" step="0.5">
             <input type="number" id="ctrl-heel-num" min="-20" max="20" step="0.5" style="width:64px">
             <span class="ctrl-unit">mm</span>
+            <button class="btn-sm active" id="btn-heel-auto" title="Let the app pick the heel position with the fewest conflicts">auto</button>
           </div>
           <div class="ctrl-group">
-            <label class="ctrl-label">Mount offset</label>
+            <label class="ctrl-label" for="ctrl-mount">Mount offset</label>
             <input type="range" id="ctrl-mount" min="-30" max="30" step="0.5">
             <input type="number" id="ctrl-mount-num" min="-30" max="30" step="0.5" style="width:64px">
             <span class="ctrl-unit">mm</span>
           </div>
           <div class="ctrl-group">
             <label class="ctrl-label">Grid</label>
-            <button class="btn-sm btn-grid-toggle" onclick="toggleGrid()">Grid off</button>
-            <button class="btn-sm btn-grid-1cm active" onclick="setGridSpacing(10)">1 cm</button>
-            <button class="btn-sm btn-grid-5mm" onclick="setGridSpacing(5)">½ cm</button>
+            <button class="btn-sm btn-grid-toggle">Grid off</button>
+            <button class="btn-sm btn-grid-spacing active" data-mm="10">1 cm</button>
+            <button class="btn-sm btn-grid-spacing" data-mm="5">½ cm</button>
           </div>
-          <button class="btn-sm" id="btn-identify" disabled title="Coming soon" style="opacity:0.5;align-self:center">
-            🔍 Identify binding
-          </button>
+          <div class="ctrl-group">
+            <label class="ctrl-label" for="paper-select">Check sheet</label>
+            <select id="paper-select" style="width:92px">
+              <option value="a4">A4</option>
+              <option value="letter">Letter</option>
+            </select>
+            <button class="btn-sm" id="btn-print" title="Print a 1:1 sheet to lay on the ski before drilling">🖨 Print 1:1</button>
+          </div>
         </div>
       </div>
 
+      <!-- Previously mounted binding -->
+      <div class="card" id="identify-card" style="margin-bottom:0.75rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:0.5rem">
+          <h2 style="margin:0">What was mounted before?</h2>
+          <button class="btn-sm" id="btn-identify">🔍 Identify</button>
+        </div>
+        <div id="identify-body" class="identify-body"></div>
+      </div>
+
       <div class="card" id="results-table-card" style="display:none">
-        <h2>Compatible bindings — tap any row to view overlay</h2>
+        <h2>All bindings — tap a row to view it</h2>
         <div style="overflow-x:auto">
           <table class="results-table" id="results-table">
             <thead>
               <tr>
                 <th>Binding</th>
-                <th>BSL (mm)</th>
-                <th>New holes</th>
-                <th>Reusable</th>
-                <th>Conflicts</th>
-                <th>Heel offset</th>
+                <th title="Holes to drill">New</th>
+                <th title="Binding holes that land on an existing hole">Reuse</th>
+                <th title="Binding holes too close to an existing hole">Confl.</th>
+                <th title="Heel piece position on its adjustment track">Heel</th>
+                <th title="Smallest distance from a hole to drill to an existing hole">Clear.</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -263,6 +290,12 @@
   </div>
 </div><!-- /step3 -->
 
-<script src="/static/app.js"></script>
+<!-- Filled just before printing; hidden on screen -->
+<div id="print-root"></div>
+
+<script src="static/calib.js"></script>
+<script src="static/matcher.js"></script>
+<script src="static/print.js"></script>
+<script src="static/app.js"></script>
 </body>
 </html>

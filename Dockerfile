@@ -1,23 +1,19 @@
-FROM python:3.12-slim
+# The app is a static site. This image is only a small web server for it.
+FROM caddy:2-alpine AS caddy
 
-WORKDIR /app
+FROM alpine:3
+# The binary is copied on its own so it loses the cap_net_bind_service file capability
+# the official image sets — with it, the container cannot start under no-new-privileges.
+COPY --from=caddy /usr/bin/caddy /usr/bin/caddy
+COPY Caddyfile /etc/caddy/Caddyfile
 
-# System dependencies for OpenCV headless
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    && rm -rf /var/lib/apt/lists/*
+# Only what the browser needs
+COPY index.html /srv/
+COPY static /srv/static
+COPY templates /srv/templates
 
-# Python dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Application code
-COPY . .
+RUN adduser -S -u 10001 -H app
+USER 10001
 
 EXPOSE 8000
-
-# Run with uvicorn (single worker — stateless app, no shared state needed)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+CMD ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
