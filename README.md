@@ -59,10 +59,24 @@ No API keys or environment variables required.
 # Python 3.11+ required
 pip install -r requirements.txt
 
-uvicorn main:app --host 0.0.0.0 --port 8765 --reload
+uvicorn main:app --host 127.0.0.1 --port 8765 --reload
 
 # Open http://localhost:8765
+
+# Tests
+pip install -r requirements-dev.txt && pytest
 ```
+
+---
+
+## Hosting it safely
+
+The app has no login and parses whatever image it is sent, so treat it as an untrusted-input service:
+
+- **Request limits are built in.** Uploads are capped at 25 MB and 50 megapixels, only JPEG/PNG/WebP are decoded, and every numeric parameter is range-checked. Tune with `MAX_UPLOAD_MB` / `MAX_IMAGE_MEGAPIXELS` (see `.env.example`).
+- **The container is locked down** in `docker-compose.yml`: non-root user, read-only filesystem, no Linux capabilities, memory/CPU/PID limits, uploads spooled to a RAM-backed `/tmp`. Keep those settings if you write your own compose file.
+- **Don't expose port 8000 directly to the internet.** Put a reverse proxy with TLS in front, and add authentication there (basic auth, Authelia, Authentik, …) unless you really want it public. If the proxy runs on the same host, publish the port as `127.0.0.1:8000:8000`.
+- **The app needs no outbound network access.** If your proxy is also a container, attach both to a Docker network declared `internal: true` and drop the `ports:` mapping — a compromised container then cannot reach the rest of your LAN.
 
 ---
 

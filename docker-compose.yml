@@ -2,25 +2,35 @@ services:
   ski-bindings:
     build: .
     ports:
+      # Published on every host interface. Note that Docker-published ports bypass
+      # ufw/firewalld rules. If your reverse proxy runs on this same host, prefer
+      #   - "127.0.0.1:8000:8000"
+      # so the app is only reachable through the proxy.
       - "8000:8000"
     environment:
-      # Required: set a long random string as your access token
-      - APP_TOKEN=${APP_TOKEN}
-      # Optional: Ollama Vision fallback (local, no API key) — set URL to enable
-      # e.g. http://your-ollama-host:11434  or  http://host.docker.internal:11434
-      - OLLAMA_URL=${OLLAMA_URL:-}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-llava}
-      # Optional: Claude Vision API fallback (requires API key)
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - CLAUDE_MODEL=${CLAUDE_MODEL:-claude-opus-4-6}
-      # Set to "false" to disable Claude API calls entirely
-      - USE_CLAUDE_FALLBACK=${USE_CLAUDE_FALLBACK:-true}
+      # Optional request limits (defaults shown) — see README "Hosting it safely"
+      - MAX_UPLOAD_MB=${MAX_UPLOAD_MB:-25}
+      - MAX_IMAGE_MEGAPIXELS=${MAX_IMAGE_MEGAPIXELS:-50}
     volumes:
       # Mount templates directory so you can update binding_db.json without rebuilding
+      # (restart the container to reload it)
       - ./templates:/app/templates:ro
+    # --- Containment: the app parses untrusted images, so give it as little as possible ---
+    read_only: true                 # immutable root filesystem
+    tmpfs:
+      - /tmp:size=128m,mode=1777    # upload spool lives in RAM, not on the host disk
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 2g                   # a runaway request kills this container, not the host
+    memswap_limit: 2g
+    pids_limit: 128
+    cpus: 2
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      # python:slim ships no curl, so the previous curl-based check could never pass
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
       interval: 30s
       timeout: 10s
       retries: 3
