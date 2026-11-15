@@ -485,6 +485,12 @@ async function doCalibrate() {
   }
 }
 
+// Escape text before it goes into innerHTML (binding names come from binding_db.json,
+// which accepts outside contributions).
+function esc(value) {
+  return String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function base64ToBlob(b64, mime) {
   const binary = atob(b64);
   const arr = new Uint8Array(binary.length);
@@ -736,14 +742,14 @@ function renderResults(data) {
       ? '<span class="badge badge-ok">OK</span>'
       : '<span class="badge badge-err">CONFLICT</span>';
     const unverified = r.verified ? '' : ' <span class="badge badge-warn" title="Unverified template">⚠</span>';
-    const varLabel   = r.variant_id ? ` <small style="color:var(--text-dim)">[${r.variant_id}]</small>` : '';
+    const varLabel   = r.variant_id ? ` <small style="color:var(--text-dim)">[${esc(r.variant_id)}]</small>` : '';
     const bslDiff    = r.bsl_mm - enteredBsl;
     const bslStyle   = bslDiff !== 0 ? 'font-weight:bold;color:var(--accent)' : 'color:var(--text-dim)';
     const bslLabel   = bslDiff === 0 ? `${r.bsl_mm}`
       : `${r.bsl_mm} <small style="font-weight:normal">(${bslDiff > 0 ? '+' : ''}${bslDiff})</small>`;
 
     tr.innerHTML = `
-      <td>${r.binding_name}${varLabel}${unverified}</td>
+      <td>${esc(r.binding_name)}${varLabel}${unverified}</td>
       <td style="${bslStyle};font-size:0.85rem">${bslLabel}</td>
       <td>${r.n_new_holes}</td>
       <td>${r.n_reusable}</td>

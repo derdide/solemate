@@ -4,6 +4,8 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
+_STRIP_ROWS = 256
+
 
 def rectify_image(
     img: np.ndarray,
@@ -48,29 +50,33 @@ def rectify_image(
     # Build remap: for each output pixel find the corresponding source pixel.
     # Output (corrected) coords → source (original) coords via inverse map:
     #   u_orig = (q - u_corr) / (r·u_corr - p)
+    #
+    # Done in horizontal strips: the full-frame coordinate maps are ~10 float32
+    # arrays the size of the image (≈600 MB for a 12 MP photo, ≈2.4 GB for 50 MP),
+    # whereas a strip keeps the working set to a few MB regardless of image size.
     h, w = img.shape[:2]
-    xs = np.arange(w, dtype=np.float32)
-    ys = np.arange(h, dtype=np.float32)
-    xx, yy = np.meshgrid(xs, ys)
+    rectified = np.empty_like(img)
+    dx = (np.arange(w, dtype=np.float32) - mpx)[None, :]
 
-    dx = xx - mpx
-    dy = yy - mpy
-    u_c = dx * axis_dx + dy * axis_dy          # along-axis in corrected space
-    v   = -dx * axis_dy + dy * axis_dx         # perpendicular (unchanged)
+    for y0 in range(0, h, _STRIP_ROWS):
+        y1 = min(h, y0 + _STRIP_ROWS)
+        dy = (np.arange(y0, y1, dtype=np.float32) - mpy)[:, None]
+        u_c = dx * axis_dx + dy * axis_dy          # along-axis in corrected space
+        v   = -dx * axis_dy + dy * axis_dx         # perpendicular (unchanged)
 
-    denom = r * u_c - p
-    # Guard against near-zero denominator far from the image area.
-    denom = np.where(np.abs(denom) < 1e-9, np.sign(denom + 1e-18) * 1e-9, denom)
-    u_o = (q - u_c) / denom
+        denom = r * u_c - p
+        # Guard against near-zero denominator far from the image area.
+        denom = np.where(np.abs(denom) < 1e-9, np.sign(denom + 1e-18) * 1e-9, denom)
+        u_o = (q - u_c) / denom
 
-    src_x = (mpx + u_o * axis_dx - v * axis_dy).astype(np.float32)
-    src_y = (mpy + u_o * axis_dy + v * axis_dx).astype(np.float32)
+        src_x = (mpx + u_o * axis_dx - v * axis_dy).astype(np.float32)
+        src_y = (mpy + u_o * axis_dy + v * axis_dx).astype(np.float32)
 
-    rectified = cv2.remap(
-        img, src_x, src_y,
-        interpolation=cv2.INTER_LINEAR,
-        borderMode=cv2.BORDER_REPLICATE,
-    )
+        rectified[y0:y1] = cv2.remap(
+            img, src_x, src_y,
+            interpolation=cv2.INTER_LINEAR,
+            borderMode=cv2.BORDER_REPLICATE,
+        )
 
     # Mount point: u_mp_orig = 0  →  u_mp_corrected = f(0) = q
     new_mpx = float(mpx + q * axis_dx)
