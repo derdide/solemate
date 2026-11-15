@@ -482,9 +482,12 @@ function startCalMode(mode) {
   updateCalButtons();
   const lbl = $('cal-mode-label');
   if (mode === 'tape') {
-    _tapePoints = []; _axisFlipped = false;
-    $('btn-flip').classList.remove('active');
-    lbl.textContent = 'Click the FIRST tape mark (heel side). Then click 1–3 more marks at equal spacing toward the tip.';
+    // Re-opening the tool keeps the marks already placed: it used to wipe them, which
+    // silently disabled "Calibrate" again.
+    const n = _tapePoints.length;
+    lbl.textContent = n === 0
+      ? 'Click the FIRST tape mark (heel side). Then click 1–3 more marks at equal spacing toward the tip.'
+      : `${n} tape mark(s) set — tap to add another, or tap a mark to remove it.`;
   } else if (mode === 'mp') {
     lbl.textContent = 'Click the ski CENTRE MARK (half-sole / mounting reference line on ski).';
   } else if (mode === 'trans1') {
@@ -515,8 +518,14 @@ function updateCalButtons() {
 }
 
 function updateCalibrateButton() {
-  $('calibrate-btn').disabled = !(_tapePoints.length >= 2 && _mpPoint);
+  const missing = [];
+  if (!_img) missing.push('a photo');
+  if (_tapePoints.length < 2) missing.push(`${2 - _tapePoints.length} more tape mark${_tapePoints.length === 1 ? '' : 's'} (①)`);
+  if (!_mpPoint) missing.push('the mount point (②)');
+  $('calibrate-btn').disabled = missing.length > 0;
+  $('calibrate-hint').textContent = missing.length ? `Still needed: ${missing.join(', ')}.` : '';
 }
+updateCalibrateButton();
 
 /** Ski axis direction and mount point (projected on the centreline when L1/L2 are set). */
 function computeAxisAndMount() {
