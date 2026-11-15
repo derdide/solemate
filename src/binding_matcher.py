@@ -247,7 +247,7 @@ def check_binding_conflicts(
             ]
             c, r = _score(analyses)
             # Better = fewer conflicts, then more reusable, then smaller offset
-            if c < best_c or (c == best_c and r > best_r):
+            if (c, -r, abs(offset)) < (best_c, -best_r, abs(best_offset)):
                 best_c, best_r = c, r
                 best_offset = offset
                 best_heel_analyses = analyses
